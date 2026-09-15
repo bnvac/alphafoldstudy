@@ -171,7 +171,16 @@ def uniprot_lengths(accessions):
 
 
 def af_model_exists(uniprot):
-    """True when the AlphaFold database serves a model for this accession."""
+    """True when the AlphaFold database serves a model for this accession.
+
+    Deliberately not the same as build_registry's version, which also probes the
+    versioned file URLs and returns which source answered. This one asks the API
+    only, because it runs across a thread pool over thousands of accessions and
+    the extra requests would dominate. The trade is that an accession served
+    only by a legacy file URL is missed here; the downloader in af_study.py
+    still tries both, so such a protein would simply never be selected rather
+    than fail later.
+    """
     try:
         resp = requests.get(CONFIG["af_api_url"].format(uniprot=uniprot), timeout=30)
         return resp.status_code == 200 and bool(resp.json())

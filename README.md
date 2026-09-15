@@ -105,8 +105,32 @@ off.
 | `per_residue.csv` | One row per individual amino acid, with its local error |
 | `stats.txt` | All statistical tests in readable form |
 | `regression.txt` | The analysis separating viral origin from disorder |
-| `compare_metrics.png` | Box chart comparing the two groups |
-| Three more `.png` files | The accuracy, confidence and disorder figures |
+| `per_residue_stats.txt` | Correlations at the individual amino acid level |
+
+### The graphs
+
+Five figures are generated. Each one answers a specific question.
+
+| Figure | Question it answers |
+|---|---|
+| `tm_boxplot.png` | Are viral proteins predicted less accurately than human ones? |
+| `plddt_vs_tm.png` | Does AlphaFold's confidence track how accurate it actually was? |
+| `disorder_vs_tm.png` | Do proteins with more floppy regions get predicted worse? |
+| `compare_metrics.png` | All three measures side by side, with a significance test on each |
+| `per_residue_disorder_hexbin.png` | Zoomed in to single amino acids: does local disorder predict local error? |
+
+`plddt_vs_tm.png` is the one to point at when explaining the coverage filter.
+Proteins flagged as sequence mismatches are drawn as x markers, and they sit in
+a telling place: high confidence but low accuracy. AlphaFold was sure and
+correct about a region that was never the one being compared. A genuine
+prediction failure looks the opposite, low confidence and low accuracy.
+
+Planned but not yet built:
+
+- A coverage histogram, showing the split between real comparisons and
+  sequence mismatches.
+- A per-disorder-bin accuracy chart, showing accuracy falling as disorder rises.
+- An ESMFold comparison, if that arm of the project goes ahead.
 
 ### The other commands
 

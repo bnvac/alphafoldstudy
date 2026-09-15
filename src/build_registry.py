@@ -474,7 +474,13 @@ def gather_candidates(type_label, taxonomy_id, prior=None, examined_ids=None):
 # Disorder estimation and binning.
 # ---------------------------------------------------------------------------
 def disorder_bin(disorder_pct):
-    """Bucket a disorder percentage into 0-25 / 25-50 / 50-75 / 75-100."""
+    """Bucket a disorder percentage into 0-25 / 25-50 / 50-75 / 75-100.
+
+    af_study.py has a near-copy that returns the string "NA" for a missing
+    value because its result goes straight into a CSV column. This one returns
+    None so that balanced_select can filter on it. Keep both: collapsing them
+    would force one caller to special-case the other's sentinel.
+    """
     if disorder_pct is None:
         return None
     if disorder_pct < 25:
