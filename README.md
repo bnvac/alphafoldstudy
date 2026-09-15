@@ -1,114 +1,256 @@
 # AlphaFold viral vs cellular accuracy study
 
-Measures AlphaFold2 prediction accuracy on viral versus human cellular proteins
-by scoring AlphaFold models against experimental PDB structures (TM-score, RMSD,
-pLDDT, predicted disorder, and sequence coverage).
+Does AlphaFold2 predict viral protein structures less accurately than human ones?
+This project answers that by taking proteins whose real structure has been solved
+experimentally, downloading AlphaFold's prediction for each one, measuring how
+closely they match, and comparing the two groups.
 
-## Quickstart
+---
+
+## Installing it
+
+### What you need first
+
+A Mac or Linux computer, about 5 GB of free disk space, and an internet
+connection. You do not need to install Python or conda yourself, and you do not
+need administrator or sudo access. The installer handles all of it.
+
+### The three commands
+
+Open a terminal and run these:
 
     git clone https://github.com/2008wbbv/alphafoldstudy.git
     cd alphafoldstudy
     bash setup_env.sh
 
-`setup_env.sh` installs Miniconda if the machine does not already have conda,
-builds the environment from `environment.yml`, and verifies every import. It is
-safe to re-run.
+That is the entire installation. It takes five to fifteen minutes, and most of
+that is downloading one large package (PyTorch).
 
-Then, in any new shell:
+### What the installer is actually doing
+
+It runs four steps and prints each one as it goes.
+
+**Step 1, finding conda.** Conda is the tool that manages scientific Python
+packages. If your computer already has it, the installer uses it. If not, the
+installer downloads Miniconda (a small version of it) and installs it for you.
+Nothing is installed system-wide and your shell settings are left alone.
+
+**Step 2, building the environment.** An environment is a private, self-contained
+folder holding a specific version of Python and the ten packages this project
+needs. Keeping them separate means this project cannot break anything else on
+your computer, and nothing else can break this project. The list of packages
+lives in `environment.yml`.
+
+**Step 3, checking it worked.** The installer imports all ten packages and prints
+a version number for each. If anything failed, it says which one.
+
+**Step 4, the structure cache.** Skipped unless you ask for it. See the cluster
+section below.
+
+### Where everything gets put
+
+| What | Where it goes |
+|---|---|
+| Miniconda | `~/miniconda3` (only if you did not already have conda) |
+| The environment and its packages | `~/miniconda3/envs/alphafold-study` |
+| Downloaded package files | `~/miniconda3/pkgs` |
+| Protein structures downloaded by the study | `data/` inside the project folder |
+| Results, figures and statistics | `results/` inside the project folder |
+
+To put conda somewhere else, for example because your home folder is small or is
+on a shared cluster with a size limit, set one variable before installing:
+
+    export CONDA_ROOT=/somewhere/with/space/miniconda3
+    bash setup_env.sh
+
+Everything then goes under that path instead.
+
+### Turning it on, every time
+
+The installer deliberately does not edit your shell startup files, so conda is
+not switched on automatically. This is on purpose: it means the project cannot
+interfere with anything else, which matters on a shared computer or a cluster.
+
+The cost is that each new terminal window needs these two lines first:
 
     source ~/miniconda3/etc/profile.d/conda.sh
     conda activate alphafold-study
+
+You will know it worked because your prompt changes to start with
+`(alphafold-study)`.
+
+If you would rather have it always on, add that first line to your `~/.bashrc`.
+
+---
+
+## Running it
+
+Run everything from the project folder, not from inside `src/`.
+
     python src/af_study.py
 
-Full instructions, including cluster setup and troubleshooting, are in
-[INSTALL.txt](INSTALL.txt).
+This downloads each protein structure into `data/`, compares every AlphaFold
+prediction against its experimental structure, runs the statistics, and writes
+everything into `results/`.
 
-## Layout
+It is safe to stop it and start it again. Structures already downloaded are
+reused rather than fetched twice, so restarting picks up roughly where it left
+off.
 
-    src/                   pipeline and tooling (all run from the repo root)
-      build_registry.py    select a balanced protein set from RCSB -> proteins.csv
-      af_study.py          download, metrics, per-residue, stats, figures, regression
-      compare_metrics.py   box chart of TM-score, pLDDT and disorder + Mann-Whitney
-      make_batches.py      split proteins.csv into HPC job batches -> jobs/
-      merge_results.py     combine results/batch_*/ outputs into single tables
-      extra_stats.py       extra robustness tests appended to results/stats.txt
-      make_captions.py     figure captions from existing results
-    jobs/                  generated SLURM batch files (batch_NN.csv + batch_NN.sh)
-    environment.yml        conda environment specification
-    setup_env.sh           one-command installer
-    INSTALL.txt            plain text setup and troubleshooting guide
-    proteins.csv           the registry actually used (a copy of proteins_250.csv)
-    proteins_250.csv       ready-made: 250 proteins, 125 viral and 125 cellular
-    proteins_1000.csv      ready-made: 1000 proteins, 445 viral and 555 cellular
+### What you get in results/
 
-## Protein lists
+| File | What it is |
+|---|---|
+| `metrics.csv` | One row per protein: accuracy scores, confidence, disorder, coverage |
+| `per_residue.csv` | One row per individual amino acid, with its local error |
+| `stats.txt` | All statistical tests in readable form |
+| `regression.txt` | The analysis separating viral origin from disorder |
+| `compare_metrics.png` | Box chart comparing the two groups |
+| Three more `.png` files | The accuracy, confidence and disorder figures |
 
-Two registries ship with the repo, so nothing has to be rebuilt before the first
-run. Both were generated by `src/make_protein_lists.py` straight from RCSB, with
-one representative per UniProt accession, 50 to 600 residues, resolution 3.0 A
-or better, a confirmed AlphaFold model, and polyprotein fragments excluded.
+### The other commands
+
+    python src/compare_metrics.py    # box chart plus Mann-Whitney tests
+    python src/extra_stats.py        # extra robustness tests, appended to stats.txt
+    python src/make_captions.py      # figure captions built from the real numbers
+    python src/make_protein_lists.py # rebuild the protein lists from scratch
+
+---
+
+## The protein lists
+
+Two lists come with the project, so there is nothing to build before your first
+run.
 
 | File | Proteins | Viral | Cellular |
 |---|---|---|---|
 | `proteins_250.csv` | 250 | 125 | 125 |
 | `proteins_1000.csv` | 1000 | 445 | 555 |
 
-`proteins_250.csv` is evenly balanced and is the default. `proteins_1000.csv`
-takes every viral protein that qualifies; 445 is the ceiling the PDB supports
-once polyproteins and accessions without AlphaFold models are removed, so it is
-uneven by necessity rather than by choice.
-
-Pick one explicitly with:
+`proteins.csv` is a copy of the 250 list and is what runs by default. To use the
+bigger one:
 
     python src/af_study.py --registry proteins_1000.csv
 
-Regenerate them from scratch with:
+Both were pulled straight from the RCSB Protein Data Bank, keeping one structure
+per protein, only structures resolved to 3.0 angstroms or better, only proteins
+between 50 and 600 amino acids, and only ones that actually have an AlphaFold
+model. Polyproteins are excluded, for the reason explained at the bottom of this
+page.
 
-    python src/make_protein_lists.py --sizes 250 1000
+The 250 list is evenly balanced and is the better one for the actual comparison.
+The 1000 list is uneven because 445 is simply how many viral proteins qualify;
+there is no larger balanced set available.
 
-Not tracked (regenerated locally): `data/`, `results/`, `logs/`
+---
 
-## Run (from the repo root)
+## Running it on a computing cluster
 
-    python src/build_registry.py     # rebuild proteins.csv from RCSB
-    python src/af_study.py           # full study on proteins.csv -> results/
+The one thing that matters: **cluster compute nodes usually have no internet
+access.** So the packages and the protein structures both have to be downloaded
+first, on the login node, where there is internet. The jobs then read from disk.
 
-Post-hoc analysis on existing results:
+On the login node:
 
-    python src/compare_metrics.py
-    python src/extra_stats.py
-    python src/make_captions.py
+    export CONDA_ROOT=/scratch/$USER/miniconda3     # somewhere with space
+    bash setup_env.sh --download
 
-## HPC batches
+The `--download` flag adds a step: after installing, it fetches every protein
+structure into `data/`. This is what lets the jobs run offline.
 
-    python src/make_batches.py       # proteins.csv -> jobs/batch_NN.csv + .sh
+Then create the job files:
 
-Each job processes one batch into its own `results/batch_NN/` folder. After the
-jobs finish, recombine them:
+    conda activate alphafold-study
+    python src/make_batches.py
 
-    python src/merge_results.py      # -> results/combined_metrics.csv, ...
+That writes `jobs/batch_01.sh` and so on, 250 proteins per job.
 
-Before submitting on a cluster:
+Before submitting, open each `jobs/batch_NN.sh` and fill in three things:
 
-  1. Pre-download on a login node, since compute nodes are usually offline:
+1. Your account and partition, which your cluster's documentation will name:
 
-         bash setup_env.sh --download
+        #SBATCH --account=YOUR_ACCOUNT
+        #SBATCH --partition=YOUR_PARTITION
 
-     The jobs reuse `./data` and never re-download.
+2. The two activation lines, with the path you used above:
 
-  2. In each `jobs/batch_NN.sh`, fill in the account and partition, and
-     uncomment the two conda activation lines.
+        source /scratch/$USER/miniconda3/etc/profile.d/conda.sh
+        conda activate alphafold-study
 
-All commands are run from the repo root.
+3. Time, memory and CPU count, if the defaults of 12 hours, 16 GB and 4 CPUs do
+   not suit your cluster.
 
-## Method in one paragraph
+Then submit, and merge the outputs when the jobs finish:
 
-Proteins are selected programmatically from RCSB rather than by hand, filtered
-by resolution and length, deduplicated by UniProt accession, and balanced across
-four predicted-disorder bins. Entries whose parent UniProt sequence exceeds the
-AlphaFold single-model limit are excluded, because those are served as fragments
-that may not contain the crystallised region at all; a sequence coverage check
-during analysis catches any that slip through. Each experimental chain is
-superposed onto its AlphaFold model with TM-align, and the resulting TM-score,
-RMSD, mean pLDDT, disorder fraction and coverage are compared between the two
-groups, both per protein and per residue.
+    sbatch jobs/batch_01.sh
+    python src/merge_results.py
+
+---
+
+## What the project actually measures
+
+Each protein gets compared on four things:
+
+- **TM-score**, from 0 to 1, for how closely the predicted shape matches the real
+  one. Above 0.5 means the same overall fold.
+- **RMSD**, the average distance in angstroms between matched atoms.
+- **pLDDT**, AlphaFold's own confidence, from 0 to 100.
+- **Disorder**, the fraction of the protein predicted to have no fixed shape.
+
+### Why polyproteins are excluded
+
+Many viruses make one long protein and then cut it into smaller working pieces.
+Every piece keeps the identifier of the original long protein. AlphaFold splits
+very long sequences into chunks and publishes only the first chunk, which often
+does not contain the piece that was experimentally solved.
+
+Comparing those two gives a near-zero score, but nothing went wrong with the
+prediction: the wrong stretch of sequence was compared. Because polyproteins are
+a viral strategy and are rare in humans, this affects one group far more than the
+other, and it will invent a difference between the groups that is not real.
+
+The project handles this twice. Proteins whose full sequence is too long for
+AlphaFold to publish in one piece are excluded when the list is built. Then,
+during the analysis, a coverage check measures how much of the real protein
+actually appears in the model and flags anything below 80 percent. Every result
+is reported both with and without those flagged proteins.
+
+---
+
+## If something goes wrong
+
+Full troubleshooting is in [INSTALL.txt](INSTALL.txt). The three most common:
+
+**`conda: command not found`** after installing. Run the `source` line from the
+"Turning it on" section above.
+
+**`CondaToSNonInteractiveError`.** Recent conda versions require accepting
+Anaconda's terms before installing anything. `setup_env.sh` does this for you, so
+you only hit it if you ran conda by hand. The fix is printed in the error.
+
+**`No space left on device`.** The environment needs about 5 GB. Reinstall
+somewhere larger using `CONDA_ROOT` as shown above.
+
+---
+
+## Project layout
+
+    src/                    all the code
+      build_registry.py     picks proteins from RCSB, one at a time
+      make_protein_lists.py picks proteins in bulk, much faster
+      af_study.py           the main study
+      compare_metrics.py    box chart and group comparison
+      extra_stats.py        additional statistical tests
+      make_captions.py      figure captions
+      make_batches.py       splits the list into cluster jobs
+      merge_results.py      recombines cluster job output
+    jobs/                   generated cluster job files
+    environment.yml         the list of packages
+    setup_env.sh            the installer
+    INSTALL.txt             detailed setup and troubleshooting
+    proteins_250.csv        ready-made 250-protein list
+    proteins_1000.csv       ready-made 1000-protein list
+    proteins.csv            the list currently in use
+
+`data/`, `results/` and `logs/` are created when you run the study and are not
+stored in the repository.
