@@ -21,9 +21,14 @@ Writes ./results/compare_metrics.png
        ./results/compare_metrics.txt
 
 Run with:  python src/compare_metrics.py [--all]
+           python src/compare_metrics.py --metrics results/combined_metrics.csv
 
 By default only coverage-filtered proteins are used, which excludes fragment
 mismatches. Pass --all to include every successfully processed protein.
+
+--metrics points the comparison at any metrics table, which is how the merged
+output of a batched cluster run (see merge_results.py) gets analysed. Outputs
+are written beside that table unless --out-dir says otherwise.
 """
 
 import argparse
@@ -59,9 +64,8 @@ PANELS = [
 ]
 
 
-def load_rows(coverage_filtered=True):
+def load_rows(path, coverage_filtered=True):
     """Load usable metric rows, optionally dropping fragment mismatches."""
-    path = os.path.join(RESULTS, "metrics.csv")
     rows = []
     with open(path, newline="") as handle:
         for r in csv.DictReader(handle):
@@ -230,22 +234,33 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[2])
     parser.add_argument("--all", action="store_true",
                         help="include fragment-flagged proteins (default excludes them)")
+    parser.add_argument("--metrics", default=os.path.join(RESULTS, "metrics.csv"),
+                        help="metrics CSV to read (default results/metrics.csv)")
+    parser.add_argument("--out-dir", default=None,
+                        help="where to write the figure and report "
+                             "(default: alongside --metrics)")
     args = parser.parse_args()
 
+    if not os.path.exists(args.metrics):
+        print("No metrics table at {0}. Run af_study.py first.".format(args.metrics))
+        return
+
     coverage_filtered = not args.all
-    rows = load_rows(coverage_filtered)
+    rows = load_rows(args.metrics, coverage_filtered)
     if not rows:
-        print("No usable rows in {0}/metrics.csv. Run af_study.py first.".format(RESULTS))
+        print("No usable rows in {0}.".format(args.metrics))
         return
 
     scope = ("Coverage-filtered set (fragment mismatches excluded)."
              if coverage_filtered else "All successfully processed proteins.")
-    os.makedirs(RESULTS, exist_ok=True)
-    out_png = os.path.join(RESULTS, "compare_metrics.png")
+    out_dir = args.out_dir or os.path.dirname(args.metrics) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    out_png = os.path.join(out_dir, "compare_metrics.png")
 
+    print("Reading {0}".format(args.metrics))
     stats = draw(rows, out_png, scope)
     print("Wrote {0}".format(out_png))
-    write_report(stats, rows, os.path.join(RESULTS, "compare_metrics.txt"), scope)
+    write_report(stats, rows, os.path.join(out_dir, "compare_metrics.txt"), scope)
 
 
 if __name__ == "__main__":

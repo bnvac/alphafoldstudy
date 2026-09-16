@@ -10,8 +10,14 @@ idempotent: if the block is already present the tests are recomputed and
 printed but not appended a second time.
 
 Run with:  python extra_stats.py
+           python extra_stats.py --metrics results/combined_metrics.csv \
+                                 --stats results/combined_stats.txt
+
+--metrics points the tests at any metrics table, which is how the merged output
+of a batched cluster run (see merge_results.py) gets analysed.
 """
 
+import argparse
 import csv
 import importlib
 import importlib.util
@@ -42,18 +48,18 @@ import numpy as np  # noqa: E402
 from scipy.stats import (  # noqa: E402
     shapiro, ttest_ind, mannwhitneyu, fisher_exact)
 
-METRICS = os.path.join("results", "metrics.csv")
-STATS = os.path.join("results", "stats.txt")
+DEFAULT_METRICS = os.path.join("results", "metrics.csv")
+DEFAULT_STATS = os.path.join("results", "stats.txt")
 SENTINEL = "EXTRA STATISTICAL TESTS (appended by extra_stats.py)"
 FAIL_TM = 0.5
 DISORDER_CUT = 0.5
 BINS = ["0-25", "25-50", "50-75", "75-100"]
 
 
-def load_filtered():
-    """Load the coverage-filtered, status-ok rows from metrics.csv."""
+def load_filtered(path):
+    """Load the coverage-filtered, status-ok rows from a metrics table."""
     rows = []
-    with open(METRICS, newline="") as handle:
+    with open(path, newline="") as handle:
         for r in csv.DictReader(handle):
             if r["status"] != "ok" or r["fragment_flag"] != "False":
                 continue
@@ -80,7 +86,27 @@ def fmt(value, nd=4):
 
 
 def main():
-    rows = load_filtered()
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[2])
+    parser.add_argument("--metrics", default=DEFAULT_METRICS,
+                        help="metrics CSV to read (default results/metrics.csv)")
+    parser.add_argument("--stats", default=None,
+                        help="stats file to append to (default: stats.txt "
+                             "alongside --metrics)")
+    args = parser.parse_args()
+
+    if not os.path.exists(args.metrics):
+        print("No metrics table at {0}. Run af_study.py first.".format(args.metrics))
+        return
+    stats_path = args.stats or os.path.join(
+        os.path.dirname(args.metrics) or ".", "stats.txt")
+
+    rows = load_filtered(args.metrics)
+    if not rows:
+        print("No coverage-filtered rows with a TM-score in {0}; "
+              "nothing to test.".format(args.metrics))
+        return
+    print("Reading {0} ({1} coverage-filtered proteins).".format(
+        args.metrics, len(rows)))
     lines = []
 
     def emit(text=""):
@@ -212,15 +238,16 @@ def main():
     print(block)
 
     existing = ""
-    if os.path.exists(STATS):
-        with open(STATS) as handle:
+    if os.path.exists(stats_path):
+        with open(stats_path) as handle:
             existing = handle.read()
     if SENTINEL in existing:
-        print("[extra_stats] block already present in {0}; not appending again.".format(STATS))
+        print("[extra_stats] block already present in {0}; not appending again.".format(
+            stats_path))
     else:
-        with open(STATS, "a") as handle:
+        with open(stats_path, "a") as handle:
             handle.write(block + "\n")
-        print("[extra_stats] appended block to {0}.".format(STATS))
+        print("[extra_stats] appended block to {0}.".format(stats_path))
 
 
 if __name__ == "__main__":

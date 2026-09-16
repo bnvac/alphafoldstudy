@@ -187,7 +187,9 @@ Then create the job files:
     conda activate alphafold-study
     python src/make_batches.py
 
-That writes `jobs/batch_01.sh` and so on, 250 proteins per job.
+That writes `jobs/batch_01.sh` and so on, 250 proteins per job. Each batch gets a
+proportional mix of viral and cellular proteins, which matters because a batch
+containing only one group cannot run the comparison the study is about.
 
 Before submitting, open each `jobs/batch_NN.sh` and fill in three things:
 
@@ -208,6 +210,18 @@ Then submit, and merge the outputs when the jobs finish:
 
     sbatch jobs/batch_01.sh
     python src/merge_results.py
+
+Merging only stitches the tables back together; it runs no statistics, and the
+`stats.txt` inside each batch folder describes that batch alone. To get the
+statistics for the whole set, point the analysis at the merged table:
+
+    python src/compare_metrics.py --metrics results/combined_metrics.csv \
+        --out-dir results/combined
+    python src/extra_stats.py --metrics results/combined_metrics.csv \
+        --stats results/combined_stats.txt
+
+`merge_results.py` prints these two commands when it finishes, so there is
+nothing to remember.
 
 ---
 
