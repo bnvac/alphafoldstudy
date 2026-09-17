@@ -9,6 +9,9 @@ closely they match, and comparing the two groups.
 
 ## Installing it
 
+**On NixOS, skip to [the NixOS section](#installing-it-on-nixos).** The conda
+installer below does not work there, for reasons explained in that section.
+
 ### What you need first
 
 A Mac or Linux computer, about 5 GB of free disk space, and an internet
@@ -83,7 +86,81 @@ If you would rather have it always on, add that first line to your `~/.bashrc`.
 
 ---
 
+## Installing it on NixOS
+
+### The two commands
+
+    bash setup_nixos.sh
+    bash run_nixos.sh
+
+That is all. The first command takes ten to twenty minutes, most of it building
+the sandbox and downloading PyTorch. The second runs the study.
+
+### Why NixOS needs its own path
+
+NixOS does not have the usual Linux folder layout. There is no `/usr/lib`, and
+crucially no `/lib64/ld-linux-x86-64.so.2`, which is the small program every
+normal Linux binary calls to start itself.
+
+Almost every scientific Python package (numpy, scipy, matplotlib, PyTorch) is
+distributed as a prebuilt binary compiled on a normal distribution. On NixOS
+those binaries cannot start, and the error is famously confusing: it says
+`No such file or directory` about a file that is clearly right there. It means
+the loader is missing, not the file.
+
+So `setup_env.sh` is no good here. Miniconda's own installer is a binary with
+the same problem, and so is everything it would install.
+
+`setup_nixos.sh` fixes this with `nix-shell`, which builds a sandbox containing
+a conventional folder layout. Inside it, ordinary Python packages work normally.
+Your actual system is untouched: nothing is installed outside the project
+folder, no root access is needed, and your `configuration.nix` is not modified.
+
+### What the installer does
+
+1. **Checks the host** and creates `data/`, `results/` and `logs/`.
+2. **Builds the sandbox** from `nix/fhs.nix`. Slow the first time, cached after.
+3. **Creates a venv** at `.venv` and installs everything into it.
+4. **Verifies** by importing all eleven packages and printing each version.
+
+Step 3 installs CPU PyTorch first, from PyTorch's own package index. This is
+deliberate: metapredict requires PyTorch, and the default one on PyPI is the
+CUDA build, which is several gigabytes and completely useless here since nothing
+in this project uses a GPU. Installing the CPU build first satisfies the
+requirement so pip never reaches for the big one.
+
+### Where everything goes
+
+| What | Where |
+|---|---|
+| The sandbox | the Nix store, shared and cached |
+| Python packages | `.venv/` inside the project folder |
+| Structures, results, logs | `data/`, `results/`, `logs/` as usual |
+
+To remove it all, delete `.venv` and run `nix-collect-garbage`.
+
+### Useful variations
+
+    bash setup_nixos.sh --recreate    rebuild the venv from scratch
+    bash setup_nixos.sh --download    also pre-download every structure
+
+    bash run_nixos.sh --registry proteins_1000.csv   the 1000-protein set
+    bash run_nixos.sh src/compare_metrics.py         any other script
+
+If your system uses flakes and has no `<nixpkgs>` on `NIX_PATH`, the script
+notices and pins a nixpkgs release itself, so it works either way.
+
+To poke around by hand:
+
+    nix-shell nix/fhs.nix
+    source .venv/bin/activate
+
+---
+
 ## Running it
+
+On NixOS use `bash run_nixos.sh` instead of the commands below; everything else
+on this page applies unchanged.
 
 Run everything from the project folder, not from inside `src/`.
 
@@ -138,6 +215,26 @@ Planned but not yet built:
     python src/extra_stats.py        # extra robustness tests, appended to stats.txt
     python src/make_captions.py      # figure captions built from the real numbers
     python src/make_protein_lists.py # rebuild the protein lists from scratch
+
+---
+
+## Results so far
+
+A full 250-protein run is committed in [`results_250/`](results_250/), so you
+can look at the figures and tables without running anything. All 250 proteins
+processed without error; 44 were flagged as sequence mismatches, leaving 206.
+
+| | viral | cellular |
+|---|---|---|
+| median TM-score | 0.912 | 0.968 |
+| median pLDDT | 79.1 | 86.8 |
+| flagged as mismatches | 39 of 125 | 5 of 125 |
+
+Viral proteins are predicted less accurately, and the difference survives
+controlling for disorder and coverage (regression p = 2.8e-07). This **reverses
+the earlier 79-protein pilot**, where disorder carried the effect and viral
+origin did not. The larger run says the opposite: viral origin is significant
+and disorder is not (p = 0.073). See `results_250/README.md`.
 
 ---
 
@@ -269,6 +366,11 @@ you only hit it if you ran conda by hand. The fix is printed in the error.
 **`No space left on device`.** The environment needs about 5 GB. Reinstall
 somewhere larger using `CONDA_ROOT` as shown above.
 
+**`No such file or directory`, on NixOS, about a file that plainly exists.**
+That is the missing dynamic loader described in the NixOS section. It means
+something ran outside the sandbox. Use `bash run_nixos.sh`, or enter the sandbox
+first with `nix-shell nix/fhs.nix`.
+
 ---
 
 ## Project layout
@@ -283,8 +385,12 @@ somewhere larger using `CONDA_ROOT` as shown above.
       make_batches.py       splits the list into cluster jobs
       merge_results.py      recombines cluster job output
     jobs/                   generated cluster job files
-    environment.yml         the list of packages
-    setup_env.sh            the installer
+    nix/fhs.nix             FHS sandbox definition, for NixOS
+    environment.yml         package list for the conda install
+    requirements.txt        package list for the venv install (NixOS)
+    setup_env.sh            the installer, Mac and normal Linux
+    setup_nixos.sh          the installer, NixOS
+    run_nixos.sh            runs the study on NixOS
     INSTALL.txt             detailed setup and troubleshooting
     proteins_250.csv        ready-made 250-protein list
     proteins_1000.csv       ready-made 1000-protein list

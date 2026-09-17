@@ -1,0 +1,53 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:               tm_score   R-squared:                       0.143
+Model:                            OLS   Adj. R-squared:                  0.130
+Method:                 Least Squares   F-statistic:                     11.24
+Date:                Wed, 16 Sep 2026   Prob (F-statistic):           7.50e-07
+Time:                        02:14:44   Log-Likelihood:                 113.89
+No. Observations:                 206   AIC:                            -219.8
+Df Residuals:                     202   BIC:                            -206.5
+Df Model:                           3                                         
+Covariance Type:            nonrobust                                         
+=================================================================================
+                    coef    std err          t      P>|t|      [0.025      0.975]
+---------------------------------------------------------------------------------
+Intercept         0.6875      0.366      1.879      0.062      -0.034       1.409
+disorder_pred    -0.1001      0.055     -1.805      0.073      -0.209       0.009
+coverage          0.2753      0.369      0.747      0.456      -0.452       1.002
+is_viral         -0.1072      0.020     -5.316      0.000      -0.147      -0.067
+==============================================================================
+Omnibus:                      119.849   Durbin-Watson:                   1.899
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):              541.042
+Skew:                          -2.416   Prob(JB):                    3.27e-118
+Kurtosis:                       9.300   Cond. No.                         78.7
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+
+Multiple regression on the coverage-filtered set
+Model: tm_score ~ disorder_pred + coverage + is_viral
+Question: does viral origin still predict AlphaFold accuracy once
+disorder and coverage are controlled for?
+
+Sample size used (after dropping missing rows): n = 206
+
+Full model coefficients:
+  disorder_pred  coef = -0.1001, p = 0.0726 -> not significant at 0.05
+  coverage       coef = +0.2753, p = 0.4562 -> not significant at 0.05
+  is_viral       coef = -0.1072, p = 2.796e-07 -> significant at 0.05
+
+CORE ANSWER: is_viral REMAINS significant (p = 2.796e-07) after
+controlling for disorder and coverage; viral origin carries
+predictive value of its own.
+
+Variance explained (R-squared):
+  disorder-only model  = 0.0113
+  full model           = 0.1430
+
+Variance inflation factors (multicollinearity, flag if > 5):
+  disorder_pred  VIF = 1.002
+  coverage       VIF = 1.031
+  is_viral       VIF = 1.030
+

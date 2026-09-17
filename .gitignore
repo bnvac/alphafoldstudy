@@ -6,8 +6,13 @@ __pycache__/
 data/
 results/
 
+# results_250/ is the committed 250-protein run, kept on purpose
+
 # Job run logs (created at submit time on the cluster)
 logs/
 
 # Registry build checkpoint (working file, delete to force a clean rebuild)
 .registry_checkpoint.json
+
+# Python venv built by setup_nixos.sh
+.venv/
