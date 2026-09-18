@@ -63,6 +63,11 @@ def load_filtered(path):
         for r in csv.DictReader(handle):
             if r["status"] != "ok" or r["fragment_flag"] != "False":
                 continue
+            # Poorly resolved crystals are excluded alongside fragment
+            # mismatches. .get keeps this working on an older metrics.csv that
+            # predates the column.
+            if r.get("missing_flag", "False") == "True":
+                continue
             if r["tm_score"] == "NA":
                 continue
             rows.append(r)

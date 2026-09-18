@@ -31,6 +31,7 @@ Run with:  python src/make_protein_lists.py
 
 import argparse
 import csv
+import io
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
@@ -46,6 +47,22 @@ CONFIG = {
     # Longer parent sequences are served by AlphaFold in fragments, so the
     # downloaded model may not contain the crystallised region at all.
     "af_max_single_fragment": 2700,
+    # UniProt protein names to exclude, matched case-insensitively. Empty by
+    # default, and deliberately so.
+    #
+    # Polyproteins were the obvious candidate: AlphaFold serves them as one
+    # model per mature chain, and the pipeline used to download whichever chain
+    # the API listed first, which for poliovirus was a 22-residue peptide. That
+    # looked like a reason to drop them. It was not. The real defect was the
+    # model choice, now fixed in af_study.select_af_entry, and once the correct
+    # mature chain is selected these proteins score normally: a set that had
+    # been scoring 0.03 to 0.08 came back at 0.96 to 0.99.
+    #
+    # Excluding them would therefore throw away viral proteins that can be
+    # measured perfectly well, and the viral pool is already the scarce side of
+    # this comparison. The coverage check in af_study.py remains the backstop
+    # for the few where chain selection cannot resolve a match.
+    "exclude_name_patterns": [],
 
     "graphql_url": "https://data.rcsb.org/graphql",
     "uniprot_search_url": "https://rest.uniprot.org/uniprotkb/search",
@@ -114,6 +131,12 @@ def parse_entity(entity, type_label):
     chains = ident.get("auth_asym_ids") or []
     if not uniprot_ids or not chains:
         return None
+    # More than one accession on a single entity means an engineered fusion or
+    # chimera, such as a receptor spliced to cytochrome b5 to aid
+    # crystallisation. No single AlphaFold model corresponds to that construct,
+    # so the comparison would be meaningless whichever accession were chosen.
+    if len(uniprot_ids) > 1:
+        return None
 
     poly = entity.get("entity_poly") or {}
     length = poly.get("rcsb_sample_sequence_length")
@@ -141,33 +164,45 @@ def parse_entity(entity, type_label):
     }
 
 
-def uniprot_lengths(accessions):
-    """Map accession -> sequence length, fetched in batches."""
-    lengths = {}
+def uniprot_records(accessions):
+    """Map accession -> (sequence length, protein name), fetched in batches.
+
+    The name is what identifies a polyprotein; the length alone does not.
+    """
+    records = {}
     accessions = list(accessions)
     size = CONFIG["uniprot_batch"]
     for start in range(0, len(accessions), size):
         chunk = accessions[start:start + size]
         query = " OR ".join("accession:{0}".format(a) for a in chunk)
         try:
-            resp = requests.get(CONFIG["uniprot_search_url"],
-                                params={"query": query, "fields": "accession,length",
-                                        "format": "tsv", "size": 500},
-                                timeout=CONFIG["timeout"])
-            for line in resp.text.strip().split("\n")[1:]:
-                parts = line.split("\t")
-                if len(parts) >= 2:
-                    try:
-                        lengths[parts[0]] = int(parts[1])
-                    except ValueError:
-                        pass
+            resp = requests.get(
+                CONFIG["uniprot_search_url"],
+                params={"query": query,
+                        "fields": "accession,length,protein_name",
+                        "format": "tsv", "size": 500},
+                timeout=CONFIG["timeout"])
+            # Parsed by header name: protein names contain commas and brackets,
+            # and the column order is not guaranteed.
+            reader = csv.DictReader(io.StringIO(resp.text), delimiter="\t")
+            for row in reader:
+                accession = row.get("Entry")
+                length = row.get("Length")
+                if accession and length and length.isdigit():
+                    records[accession] = (int(length), row.get("Protein names") or "")
         except Exception as exc:
             print("  uniprot batch at {0} failed: {1}".format(start, exc))
-        sys.stdout.write("\r  resolved {0}/{1} UniProt lengths".format(
-            len(lengths), len(accessions)))
+        sys.stdout.write("\r  resolved {0}/{1} UniProt records".format(
+            len(records), len(accessions)))
         sys.stdout.flush()
     print()
-    return lengths
+    return records
+
+
+def is_excluded_name(name):
+    """True when a UniProt protein name matches an exclusion pattern."""
+    lowered = (name or "").lower()
+    return any(pattern in lowered for pattern in CONFIG["exclude_name_patterns"])
 
 
 def af_model_exists(uniprot):
@@ -220,14 +255,22 @@ def gather(type_label, taxonomy_id, pool_size):
         candidates.append(parsed)
     print("  {0} distinct accessions inside the length window".format(len(candidates)))
 
-    lengths = uniprot_lengths(c["uniprot"] for c in candidates)
+    records = uniprot_records(c["uniprot"] for c in candidates)
     limit = CONFIG["af_max_single_fragment"]
+
+    # An accession whose record could not be resolved is kept; the coverage
+    # check in af_study.py is the backstop for anything that slips through.
     before = len(candidates)
-    # An accession whose length is unknown is kept; the coverage check in
-    # af_study.py is the backstop for anything that slips through.
-    candidates = [c for c in candidates if lengths.get(c["uniprot"], 0) <= limit]
+    candidates = [c for c in candidates
+                  if records.get(c["uniprot"], (0, ""))[0] <= limit]
     print("  {0} excluded as AlphaFold fragments (parent over {1} aa)".format(
         before - len(candidates), limit))
+
+    before = len(candidates)
+    candidates = [c for c in candidates
+                  if not is_excluded_name(records.get(c["uniprot"], (0, ""))[1])]
+    print("  {0} excluded as polyproteins (by UniProt annotation)".format(
+        before - len(candidates)))
 
     return filter_alphafold(candidates)
 

@@ -71,7 +71,11 @@ def load_rows(path, coverage_filtered=True):
         for r in csv.DictReader(handle):
             if r.get("status") != "ok":
                 continue
-            if coverage_filtered and r.get("fragment_flag") == "True":
+            # missing_flag marks crystals too poorly resolved to be ground
+            # truth. Older metrics.csv files have no such column, so its absence
+            # is treated as not flagged.
+            if coverage_filtered and (r.get("fragment_flag") == "True"
+                                      or r.get("missing_flag") == "True"):
                 continue
             rows.append(r)
     return rows

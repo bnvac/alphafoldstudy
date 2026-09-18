@@ -124,8 +124,9 @@ CONFIG = {
     # When the classic file URL does not resolve, fall back to the AlphaFold
     # API to find the real model file. The AlphaFold DB has migrated many
     # entries (notably viral ones) to a hash-based ID scheme that the classic
-    # UniProt-accession URL no longer serves. For multi-fragment proteins the
-    # first model returned by the API is used. Set to False for classic-only.
+    # UniProt-accession URL no longer serves. Where the API offers several
+    # models for one accession, the one covering the crystallised region is
+    # chosen; see select_af_entry. Set to False for classic-only.
     "use_af_api_fallback": True,
 
     "rcsb_url": "https://files.rcsb.org/download/{pdb}.pdb",
@@ -141,6 +142,19 @@ CONFIG = {
     # A residue counts as disordered when its metapredict score is at or above
     # this threshold.
     "disorder_threshold": 0.5,
+
+    # Bounds on the number of residues that actually carry coordinates in the
+    # experimental chain. The registry applies a length filter too, but it runs
+    # on the entity length declared by RCSB, which counts residues that were
+    # never resolved. Chains well below the lower bound cannot be meaningfully
+    # superposed: a 25-residue fragment will align onto almost anything.
+    "exp_len_min": 50,
+    "exp_len_max": 600,
+
+    # Chains missing more than this fraction of their sequence are too poorly
+    # resolved to serve as ground truth. Flagged rather than dropped, so the
+    # effect of excluding them stays visible.
+    "missing_frac_max": 0.30,
 
     "figure_dpi": 150,
 }
@@ -252,40 +266,139 @@ def download_experimental(pdb_id):
     return "fail"
 
 
-def download_alphafold(uniprot):
-    """Download an AlphaFold model. Return ok/skip/fail.
+def sequence_overlap(exp_seq, model_seq, k=10):
+    """Fraction of k-mers of exp_seq that occur in model_seq, in [0, 1].
+
+    A plain substring test is too brittle here: the deposited construct often
+    differs from the reference sequence by a few point mutations or a cloning
+    artifact, which breaks exact containment while leaving the protein plainly
+    the same one. Sampling short k-mers tolerates that, and is fast enough to
+    run against every candidate model.
+    """
+    if not exp_seq or not model_seq or len(exp_seq) < k:
+        return 0.0
+    step = max(1, k // 2)
+    probes = [exp_seq[i:i + k] for i in range(0, len(exp_seq) - k + 1, step)]
+    if not probes:
+        return 0.0
+    return sum(1 for probe in probes if probe in model_seq) / float(len(probes))
+
+
+def select_af_entry(entries, exp_seq):
+    """Pick the AlphaFold model that actually covers the crystallised chain.
+
+    AlphaFold serves a polyprotein accession as one model per mature chain, and
+    the API returns them in no useful order. Poliovirus P03300 comes back as
+    thirteen models of which the first is a 22-residue peptide, so taking
+    entries[0] compares a 283-residue capsid protein against that peptide and
+    scores TM = 0.05. The correct model, covering residues 580 to 1543, is
+    seventh in the list.
+
+    Ranks by sequence overlap with the experimental chain first, then by model
+    length. With no experimental sequence to compare against, or when nothing
+    overlaps, the longest model is the safest default: a full-length model can
+    still be superposed, whereas a 22-residue one cannot.
+    """
+    if not entries:
+        return None
+    if len(entries) == 1:
+        return entries[0]
+
+    def rank(entry):
+        model_seq = entry.get("uniprotSequence") or ""
+        return (sequence_overlap(exp_seq, model_seq), len(model_seq))
+
+    return max(entries, key=rank)
+
+
+def af_model_covers(uniprot, exp_seq, min_overlap=0.5):
+    """True when the cached AlphaFold model contains the experimental chain.
+
+    Used to detect models cached by an earlier run that picked the wrong
+    segment, so that a re-run repairs them instead of reusing them forever.
+    """
+    path = local_structure_path(alphafold_prefix(uniprot))
+    if path is None or not exp_seq:
+        return True
+    try:
+        _, _, af_seq = load_chain(path, "A")
+    except Exception:
+        return True
+    return sequence_overlap(exp_seq, af_seq) >= min_overlap
+
+
+def download_alphafold(uniprot, exp_seq=None):
+    """Download an AlphaFold model. Return ok/skip/fail/refetched.
 
     Tries the classic UniProt-accession file URL across configured versions
     first, then falls back to the AlphaFold API to resolve the real file URL
     (the DB has migrated many entries to a hash-based ID scheme). The API path
     prefers the PDB file and falls back to mmCIF.
+
+    Passing exp_seq lets the right model be chosen when the accession has more
+    than one, and lets a wrong model cached by an earlier run be replaced.
     """
     prefix = alphafold_prefix(uniprot)
-    if local_structure_path(prefix):
-        return "skip"
-    for version in CONFIG["af_model_versions"]:
-        url = CONFIG["af_url"].format(uniprot=uniprot, version=version)
-        ok = http_download(url, prefix + ".pdb", CONFIG["request_timeout"])
-        time.sleep(CONFIG["request_sleep"])
-        if ok:
-            return "ok"
+    cached = local_structure_path(prefix)
+    if cached:
+        if af_model_covers(uniprot, exp_seq):
+            return "skip"
+        # Cached model does not contain the crystallised chain. Remove it so the
+        # code below can resolve a better one.
+        os.remove(cached)
+        outcome = "refetched"
+    else:
+        outcome = "ok"
+
+    # The classic URL only ever serves one model per accession, so it is only
+    # safe when the accession is not split into segments. Resolve through the
+    # API first whenever there is an experimental sequence to match against.
+    if exp_seq is None:
+        for version in CONFIG["af_model_versions"]:
+            url = CONFIG["af_url"].format(uniprot=uniprot, version=version)
+            ok = http_download(url, prefix + ".pdb", CONFIG["request_timeout"])
+            time.sleep(CONFIG["request_sleep"])
+            if ok:
+                return outcome
 
     if CONFIG["use_af_api_fallback"]:
         api_url = CONFIG["af_api_url"].format(uniprot=uniprot)
         try:
             resp = requests.get(api_url, timeout=CONFIG["request_timeout"])
             if resp.status_code == 200:
-                entries = resp.json()
-                if entries:
+                entry = select_af_entry(resp.json(), exp_seq)
+                if entry:
                     for key, ext in [("pdbUrl", ".pdb"), ("cifUrl", ".cif")]:
-                        file_url = entries[0].get(key)
+                        file_url = entry.get(key)
                         if file_url and http_download(file_url, prefix + ext, CONFIG["request_timeout"]):
                             time.sleep(CONFIG["request_sleep"])
-                            return "ok"
+                            return outcome
         except Exception as exc:
             print("  AlphaFold API fallback failed for {0}: {1}".format(uniprot, exc))
         time.sleep(CONFIG["request_sleep"])
+
+    # Last resort when an experimental sequence was supplied but the API route
+    # produced nothing: the classic single-model URL is better than no model.
+    if exp_seq is not None:
+        for version in CONFIG["af_model_versions"]:
+            url = CONFIG["af_url"].format(uniprot=uniprot, version=version)
+            if http_download(url, prefix + ".pdb", CONFIG["request_timeout"]):
+                time.sleep(CONFIG["request_sleep"])
+                return outcome
+            time.sleep(CONFIG["request_sleep"])
     return "fail"
+
+
+def experimental_sequence(pdb_id, chain_id):
+    """Sequence of the experimental chain, or None if it cannot be read."""
+    path = local_structure_path(experimental_prefix(pdb_id))
+    if path is None:
+        return None
+    try:
+        _, _, exp_seq = load_chain(path, chain_id)
+        return exp_seq or None
+    except Exception:
+        return None
 
 
 def stage1_download(registry):
@@ -293,19 +406,29 @@ def stage1_download(registry):
     print("\n=== Stage 1: download structures into {0} ===".format(CONFIG["data_dir"]))
     os.makedirs(CONFIG["data_dir"], exist_ok=True)
     failures = []
+    repaired = 0
     for protein in registry:
         pdb_id = protein["pdb_id"]
         uniprot = protein["uniprot"]
 
+        # The experimental structure comes first so its sequence can steer the
+        # choice of AlphaFold model, which matters whenever an accession is
+        # served as several per-chain models.
         exp_status = download_experimental(pdb_id)
-        af_status = download_alphafold(uniprot)
+        exp_seq = experimental_sequence(pdb_id, protein["pdb_chain"])
+        af_status = download_alphafold(uniprot, exp_seq)
         print("  {0:<32} exp({1})={2:<4} AF({3})={4}".format(
             protein["name"][:32], pdb_id, exp_status, uniprot, af_status))
         if exp_status == "fail":
             failures.append("{0} experimental {1}".format(protein["name"], pdb_id))
         if af_status == "fail":
             failures.append("{0} AlphaFold {1}".format(protein["name"], uniprot))
+        if af_status == "refetched":
+            repaired += 1
 
+    if repaired:
+        print("  Replaced {0} cached AlphaFold model(s) that did not contain "
+              "the crystallised chain.".format(repaired))
     if failures:
         print("  {0} download failure(s):".format(len(failures)))
         for item in failures:
@@ -460,8 +583,22 @@ METRIC_FIELDS = [
     "name", "type", "pdb_id", "pdb_chain", "uniprot",
     "exp_len", "af_len", "tm_score", "rmsd", "mean_plddt",
     "disorder_frac", "disorder_pct", "disorder_bin", "missing_frac",
-    "coverage", "fragment_flag", "status",
+    "coverage", "fragment_flag", "missing_flag", "status",
 ]
+
+
+def is_usable(row):
+    """True when a row belongs in the primary, filtered analysis.
+
+    Three things disqualify a protein: it failed to process at all, the model
+    does not contain the crystallised sequence, or the crystal is too poorly
+    resolved to serve as ground truth. Rows are kept in metrics.csv either way,
+    and every analysis is reported both filtered and unfiltered, so excluding
+    them never hides anything.
+    """
+    if row.get("status") != "ok":
+        return False
+    return not row.get("fragment_flag") and not row.get("missing_flag")
 
 
 def stage2_metrics(registry):
@@ -479,7 +616,8 @@ def stage2_metrics(registry):
             "exp_len": None, "af_len": None, "tm_score": None, "rmsd": None,
             "mean_plddt": None, "disorder_frac": None, "disorder_pct": None,
             "disorder_bin": "NA", "missing_frac": None,
-            "coverage": None, "fragment_flag": False, "status": "ok",
+            "coverage": None, "fragment_flag": False, "missing_flag": False,
+            "status": "ok",
         }
         try:
             exp_path = local_structure_path(experimental_prefix(protein["pdb_id"]))
@@ -496,6 +634,16 @@ def stage2_metrics(registry):
             if len(exp_seq) == 0 or len(af_seq) == 0:
                 raise ValueError("empty chain after parsing")
 
+            # The registry length filter runs on the entity length RCSB
+            # declares, which counts residues that were never resolved. Re-check
+            # against the residues that actually carry coordinates, since those
+            # are what gets superposed.
+            if not (CONFIG["exp_len_min"] <= len(exp_seq) <= CONFIG["exp_len_max"]):
+                raise ValueError(
+                    "excluded: experimental chain has {0} resolved residues, "
+                    "outside {1}-{2}".format(
+                        len(exp_seq), CONFIG["exp_len_min"], CONFIG["exp_len_max"]))
+
             # chain1 is the experimental structure, so tm_norm_chain1 is the
             # TM-score normalised by the length of the true structure: how well
             # the AlphaFold model recovers the experimentally observed fold.
@@ -505,6 +653,8 @@ def stage2_metrics(registry):
 
             row["mean_plddt"] = mean_plddt(af_chain)
             row["missing_frac"] = missing_fraction(exp_chain)
+            row["missing_flag"] = (row["missing_frac"] is not None
+                                   and row["missing_frac"] > CONFIG["missing_frac_max"])
 
             coverage = sequence_coverage(exp_seq, af_seq)
             row["coverage"] = coverage
@@ -520,11 +670,15 @@ def stage2_metrics(registry):
             print("  {0}: {1}".format(protein["name"], row["status"]))
 
         if row["status"] == "ok":
+            notes = ""
+            if row["fragment_flag"]:
+                notes += "  [FRAGMENT]"
+            if row["missing_flag"]:
+                notes += "  [UNRESOLVED]"
             print("  {0:<32} TM={1} RMSD={2} pLDDT={3} disorder={4} cov={5}{6}".format(
                 protein["name"][:32], _fmt(row["tm_score"], 3),
                 _fmt(row["rmsd"], 2), _fmt(row["mean_plddt"], 1),
-                _fmt(row["disorder_pct"], 1), _fmt(row["coverage"], 2),
-                "  [FRAGMENT]" if row["fragment_flag"] else ""))
+                _fmt(row["disorder_pct"], 1), _fmt(row["coverage"], 2), notes))
         rows.append(row)
 
     out = os.path.join(CONFIG["results_dir"], "metrics.csv")
@@ -855,8 +1009,8 @@ def stage3_stats(rows):
         lines.append(text)
 
     ok = [r for r in rows if r["status"] == "ok" and r["tm_score"] is not None]
-    kept = [r for r in ok if not r["fragment_flag"]]
-    dropped = [r for r in ok if r["fragment_flag"]]
+    kept = [r for r in ok if is_usable(r)]
+    dropped = [r for r in ok if not is_usable(r)]
 
     emit("AlphaFold accuracy: viral vs cellular proteins")
     emit("Exploratory analysis. Effect sizes are reported alongside p-values;")
@@ -905,8 +1059,8 @@ def stage4_figures(rows):
     colors = {"viral": "#d1495b", "cellular": "#30638e"}
 
     ok = [r for r in rows if r["status"] == "ok" and r["tm_score"] is not None]
-    kept = [r for r in ok if not r["fragment_flag"]]
-    flagged = [r for r in ok if r["fragment_flag"]]
+    kept = [r for r in ok if is_usable(r)]
+    flagged = [r for r in ok if not is_usable(r)]
     groups = [("viral", [r for r in kept if r["type"] == "viral"]),
               ("cellular", [r for r in kept if r["type"] == "cellular"])]
 
@@ -1011,7 +1165,7 @@ def stage5_regression(rows):
     # row missing one of the four modelled columns.
     records = []
     for r in rows:
-        if r["status"] != "ok" or r["fragment_flag"]:
+        if not is_usable(r):
             continue
         tm = r["tm_score"]
         disorder_pred = r["disorder_frac"]

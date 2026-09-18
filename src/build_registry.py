@@ -143,7 +143,15 @@ CONFIG = {
     # Excluding long parent sequences here keeps those cases out of the dataset
     # entirely, instead of collecting them and filtering them afterwards.
     "af_max_single_fragment": 2700,
-    "uniprot_api_url": "https://rest.uniprot.org/uniprotkb/{accession}.json?fields=length",
+    "uniprot_api_url":
+        "https://rest.uniprot.org/uniprotkb/{accession}.json"
+        "?fields=length,protein_name",
+    # UniProt protein names to exclude, matched case-insensitively. Empty by
+    # default: see the note on exclude_name_patterns in make_protein_lists.py.
+    # In short, polyproteins look like they should be excluded but should not
+    # be, because af_study.select_af_entry now picks the correct mature chain
+    # and they score normally once it does.
+    "exclude_name_patterns": [],
 
     # Candidate gathering checkpoints here after every accepted candidate, so a
     # long build that is interrupted resumes instead of starting over. Delete
@@ -234,6 +242,10 @@ def resolve_entity(entity_id):
     auth_asym_ids = ident.get("auth_asym_ids") or []
     if not uniprot_ids or not auth_asym_ids:
         return None
+    # Two accessions on one entity means an engineered fusion or chimera, which
+    # no single AlphaFold model corresponds to.
+    if len(uniprot_ids) > 1:
+        return None
 
     entity_poly = data.get("entity_poly", {}) or {}
     poly_entity = data.get("rcsb_polymer_entity", {}) or {}
@@ -310,27 +322,41 @@ def fetch_resolution(pdb_id):
     return None
 
 
-def fetch_uniprot_length(accession):
-    """Length of the full UniProt sequence for an accession, or None."""
+def fetch_uniprot_record(accession):
+    """Return (sequence length, protein name) for an accession, or (None, "")."""
     url = CONFIG["uniprot_api_url"].format(accession=accession)
     try:
         resp = requests.get(url, timeout=CONFIG["request_timeout"])
         resp.raise_for_status()
-        return int(resp.json().get("sequence", {}).get("length"))
+        data = resp.json()
+        length = int(data.get("sequence", {}).get("length"))
+        names = data.get("proteinDescription", {}) or {}
+        recommended = (names.get("recommendedName") or {}).get("fullName") or {}
+        name = recommended.get("value") or ""
+        if not name:
+            submitted = names.get("submissionNames") or []
+            if submitted:
+                name = (submitted[0].get("fullName") or {}).get("value") or ""
+        return length, name
     except Exception:
-        return None
+        return None, ""
 
 
 def is_fragment_risk(accession):
-    """True when AlphaFold serves this accession in fragments.
+    """True when this accession must not enter the dataset.
 
-    A parent sequence longer than the single-model limit is split by the
-    AlphaFold database, so the fragment the pipeline downloads may not contain
-    the crystallised region at all. Those entries are excluded up front. An
-    accession whose length cannot be determined is kept, because the runtime
+    Two things disqualify it. A parent sequence longer than the single-model
+    limit is split into fragments by the AlphaFold database, so the fragment
+    downloaded may not contain the crystallised region. And any polyprotein,
+    whatever its length, is served as one model per mature chain, so a crystal
+    of one mature product gets compared against whichever chain comes back.
+
+    An accession whose record cannot be fetched is kept, because the runtime
     coverage check in af_study.py still guards against a mismatch.
     """
-    length = fetch_uniprot_length(accession)
+    length, name = fetch_uniprot_record(accession)
+    if any(p in name.lower() for p in CONFIG["exclude_name_patterns"]):
+        return True
     if length is None:
         return False
     return length > CONFIG["af_max_single_fragment"]
