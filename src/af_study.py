@@ -311,6 +311,15 @@ def select_af_entry(entries, exp_seq):
     return max(entries, key=rank)
 
 
+def _mark_selected(marker_path):
+    """Record that this accession has been through AlphaFold model selection."""
+    try:
+        with open(marker_path, "w") as handle:
+            handle.write("selected\n")
+    except OSError:
+        pass  # The marker is an optimisation; failing to write it is harmless.
+
+
 def af_model_covers(uniprot, exp_seq, min_overlap=0.5):
     """True when the cached AlphaFold model contains the experimental chain.
 
@@ -340,8 +349,14 @@ def download_alphafold(uniprot, exp_seq=None):
     """
     prefix = alphafold_prefix(uniprot)
     cached = local_structure_path(prefix)
+    marker = prefix + ".selected"
     if cached:
-        if af_model_covers(uniprot, exp_seq):
+        # The marker records that this accession has already been through model
+        # selection. Without it, an accession whose best available model still
+        # does not match, such as a crystal of a different strain, would be
+        # deleted and re-downloaded on every single run.
+        if os.path.exists(marker) or af_model_covers(uniprot, exp_seq):
+            _mark_selected(marker)
             return "skip"
         # Cached model does not contain the crystallised chain. Remove it so the
         # code below can resolve a better one.
@@ -372,6 +387,7 @@ def download_alphafold(uniprot, exp_seq=None):
                         file_url = entry.get(key)
                         if file_url and http_download(file_url, prefix + ext, CONFIG["request_timeout"]):
                             time.sleep(CONFIG["request_sleep"])
+                            _mark_selected(marker)
                             return outcome
         except Exception as exc:
             print("  AlphaFold API fallback failed for {0}: {1}".format(uniprot, exc))
@@ -384,6 +400,7 @@ def download_alphafold(uniprot, exp_seq=None):
             url = CONFIG["af_url"].format(uniprot=uniprot, version=version)
             if http_download(url, prefix + ".pdb", CONFIG["request_timeout"]):
                 time.sleep(CONFIG["request_sleep"])
+                _mark_selected(marker)
                 return outcome
             time.sleep(CONFIG["request_sleep"])
     return "fail"
