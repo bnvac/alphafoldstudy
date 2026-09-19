@@ -2,31 +2,31 @@ Per-residue analysis of local AlphaFold error
 Local error is the CA-CA distance after TM-align superposition.
 Exploratory; residues within a protein are not independent.
 
-Total residues: 44274
-  with a disorder score: 44274
+Total residues: 47498
+  with a disorder score: 47498
 
 Spearman: disorder score vs CA distance (all residues)
-  rho = +0.139, p = 1.292e-189 (n=44274 residues)
+  rho = +0.154, p = 1.684e-250 (n=47498 residues)
 
 Spearman: pLDDT vs CA distance (all residues)
-  rho = -0.617, p = 0 (n=44274 residues)
+  rho = -0.607, p = 0 (n=47498 residues)
 
 Spearman: disorder score vs CA distance (viral only)
-  rho = +0.019, p = 0.01163 (n=17571 residues)
+  rho = +0.113, p = 2.94e-60 (n=20834 residues)
 
 Spearman: pLDDT vs CA distance (viral only)
-  rho = -0.576, p = 0 (n=17571 residues)
+  rho = -0.581, p = 0 (n=20834 residues)
 
 Spearman: disorder score vs CA distance (cellular only)
-  rho = +0.156, p = 4.592e-145 (n=26703 residues)
+  rho = +0.150, p = 2.157e-133 (n=26664 residues)
 
 Spearman: pLDDT vs CA distance (cellular only)
-  rho = -0.575, p = 0 (n=26703 residues)
+  rho = -0.578, p = 0 (n=26664 residues)
 
 Disordered (score >= 0.5) vs ordered (< 0.5) residues, CA distance
-  median disordered = 0.815 A (n=1083)
-  median ordered    = 0.583 A (n=43191)
-  Mann-Whitney U = 27581622.0, p = 5.826e-24
-  rank-biserial r = +0.179 (positive: disordered residues have
+  median disordered = 0.829 A (n=1101)
+  median ordered    = 0.568 A (n=46397)
+  Mann-Whitney U = 30917274.0, p = 6.119e-33
+  rank-biserial r = +0.210 (positive: disordered residues have
   larger local error)
 

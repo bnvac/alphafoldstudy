@@ -221,20 +221,27 @@ Planned but not yet built:
 ## Results so far
 
 A full 250-protein run is committed in [`results_250/`](results_250/), so you
-can look at the figures and tables without running anything. All 250 proteins
-processed without error; 44 were flagged as sequence mismatches, leaving 206.
+can look at the figures and tables without running anything. Of the 250: 6
+excluded for having too few resolved residues, 17 flagged as sequence
+mismatches, 12 as too poorly resolved, leaving **221 analysed**.
 
-| | viral | cellular |
+| | viral (n=105) | cellular (n=116) |
 |---|---|---|
-| median TM-score | 0.912 | 0.968 |
-| median pLDDT | 79.1 | 86.8 |
-| flagged as mismatches | 39 of 125 | 5 of 125 |
+| median TM-score | 0.920 | 0.970 |
+| median pLDDT | 79.0 | 86.8 |
+| median disorder | 10.9% | 14.6% |
 
-Viral proteins are predicted less accurately, and the difference survives
-controlling for disorder and coverage (regression p = 2.8e-07). This **reverses
-the earlier 79-protein pilot**, where disorder carried the effect and viral
-origin did not. The larger run says the opposite: viral origin is significant
-and disorder is not (p = 0.073). See `results_250/README.md`.
+Viral proteins are predicted less accurately (p = 3.5e-09, rank-biserial
+-0.460), and in the regression **both viral origin (p = 5.2e-07) and disorder
+(p = 0.00067) independently predict accuracy**. They are not confounded: VIFs
+are near 1.0 and viral proteins are not the more disordered group here.
+
+This result survived a significant correction. An earlier run reported a larger
+raw gap that was partly produced by a bug in this repository, which downloaded
+the wrong AlphaFold model for 33 proteins, all viral. Fixing it recovered 22 of
+them into the analysed set with TM-scores rising from roughly 0.03 to roughly
+0.97. The gap remained. See `results_250/README.md` for the full before and
+after, and for the limitations that go with it.
 
 ---
 
