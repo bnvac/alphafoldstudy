@@ -5,9 +5,9 @@ Generate ready-to-use protein registries so a fresh clone can run immediately.
 
 This does the same job as build_registry.py but is built for scale. Instead of
 one REST round trip per candidate, it fetches entity details from the RCSB
-GraphQL endpoint in batches of 150, looks up UniProt lengths in batches of 100,
-and checks AlphaFold model existence in parallel. Building a thousand-protein
-registry drops from hours to a couple of minutes.
+GraphQL endpoint in batches of 150, looks up UniProt records in batches of 100,
+and checks AlphaFold coverage in parallel. Building a thousand-protein registry
+drops from hours to a couple of minutes.
 
 Written registries (committed to the repo so nobody has to rebuild them):
 
@@ -20,10 +20,23 @@ Selection rules, matching the study design:
   - viral (taxonomy 10239) and human (taxonomy 9606)
   - 50 to 600 residues in the crystallised entity
   - one representative per UniProt accession
-  - an AlphaFold model must exist
-  - the parent UniProt sequence must not exceed the AlphaFold single-model
-    limit, which excludes the polyprotein fragments that would otherwise
-    produce artificially low scores
+  - one accession per entity, which drops engineered fusions and chimeras
+  - an AlphaFold model must exist AND must actually cover the crystallised
+    sequence, measured with the same function and threshold the analysis uses
+
+The last rule is what keeps mismatches out. Requiring only that a model exists
+admits the three failure modes that produced every artificially low score in
+earlier datasets: a polyprotein accession whose models are separate mature
+chains, an accession describing a different strain than the deposited
+construct, and a model covering another region entirely. Each of those has a
+model; none has a model of the protein that was crystallised. Checking coverage
+here, against af_study.COVERAGE_MIN, means a selected protein is guaranteed to
+pass the runtime check rather than being filtered out of the results later.
+
+Variants are deliberately kept. An Omicron spike RBD against the reference
+sequence model covers 0.88, comfortably above threshold, while a wrong-strain
+accession covers 0.20. Alignment identity separates those cleanly where a
+k-mer test does not, since scattered point mutations break most k-mers.
 
 Run with:  python src/make_protein_lists.py
            python src/make_protein_lists.py --sizes 250 1000 --pool 12000
@@ -32,11 +45,18 @@ Run with:  python src/make_protein_lists.py
 import argparse
 import csv
 import io
+import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from rcsbapi.search import AttributeQuery
+
+# The coverage measurement and its threshold are imported rather than copied,
+# so the check applied when a dataset is built is identical to the one applied
+# when it is analysed. Importing af_study also runs its dependency bootstrap.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from af_study import COVERAGE_MIN, sequence_coverage  # noqa: E402
 
 CONFIG = {
     "taxonomy": {"viral": "10239", "cellular": "9606"},
@@ -70,14 +90,19 @@ CONFIG = {
 
     "entity_batch": 150,     # entity ids per GraphQL request
     "uniprot_batch": 100,    # accessions per UniProt request
-    "af_workers": 16,        # parallel AlphaFold existence checks
+    "af_workers": 16,        # parallel AlphaFold checks
     "timeout": 90,
+
+    # A candidate is kept only when some AlphaFold model actually covers the
+    # sequence that was crystallised. Set from af_study.COVERAGE_MIN so the two
+    # checks cannot drift apart: passing here means passing there.
+    "af_min_coverage": COVERAGE_MIN,
 }
 
 ENTITY_FIELDS = """
   rcsb_id
   rcsb_polymer_entity_container_identifiers { uniprot_ids auth_asym_ids }
-  entity_poly { rcsb_sample_sequence_length }
+  entity_poly { rcsb_sample_sequence_length pdbx_seq_one_letter_code_can }
   rcsb_polymer_entity { pdbx_description }
   entry { rcsb_entry_info { resolution_combined } }
 """
@@ -148,6 +173,11 @@ def parse_entity(entity, type_label):
     if not resolutions:
         return None
 
+    sequence = (poly.get("pdbx_seq_one_letter_code_can") or "").strip().upper()
+    sequence = "".join(sequence.split())
+    if not sequence:
+        return None
+
     rcsb_id = entity.get("rcsb_id") or ""
     pdb_id = rcsb_id.split("_")[0].upper()
     if not pdb_id:
@@ -161,6 +191,9 @@ def parse_entity(entity, type_label):
         "pdb_chain": chains[0],
         "uniprot": uniprot_ids[0],
         "resolution": "{0:.2f}".format(float(resolutions[0])),
+        # Carried only so the AlphaFold check can match against it; not written
+        # to the CSV, whose columns are fixed by FIELDNAMES.
+        "sequence": sequence,
     }
 
 
@@ -205,31 +238,66 @@ def is_excluded_name(name):
     return any(pattern in lowered for pattern in CONFIG["exclude_name_patterns"])
 
 
-def af_model_exists(uniprot):
-    """True when the AlphaFold database serves a model for this accession.
+def af_best_coverage(candidate):
+    """Best sequence coverage of this candidate by any of its AlphaFold models.
 
-    Deliberately not the same as build_registry's version, which also probes the
-    versioned file URLs and returns which source answered. This one asks the API
-    only, because it runs across a thread pool over thousands of accessions and
-    the extra requests would dominate. The trade is that an accession served
-    only by a legacy file URL is missed here; the downloader in af_study.py
-    still tries both, so such a protein would simply never be selected rather
-    than fail later.
+    Coverage is measured with af_study.sequence_coverage, which is the same
+    function the analysis applies at runtime, against the same COVERAGE_MIN
+    threshold. That is deliberate and is the whole point of this check: a
+    candidate accepted here is guaranteed to pass the runtime check, so
+    mismatches are kept out of the dataset instead of being filtered out of the
+    results afterwards.
+
+    Returns 0.0 when no model exists or the request fails, so a candidate is
+    dropped rather than admitted on a network error.
+
+    Asking only whether a model exists, as this did previously, admits three
+    kinds of mismatch: a polyprotein accession whose models are individual
+    mature chains, an accession describing a different strain than the
+    deposited construct, and an accession whose model covers another region.
+    All three have a model. None has a model of the protein crystallised.
     """
     try:
-        resp = requests.get(CONFIG["af_api_url"].format(uniprot=uniprot), timeout=30)
-        return resp.status_code == 200 and bool(resp.json())
+        url = CONFIG["af_api_url"].format(uniprot=candidate["uniprot"])
+        resp = requests.get(url, timeout=30)
+        if resp.status_code != 200:
+            return 0.0
+        entries = resp.json() or []
     except Exception:
-        return False
+        return 0.0
+
+    crystal = candidate["sequence"]
+    best = 0.0
+    # Longest models first, so a full-length model settles it before the short
+    # mature-chain models are aligned at all.
+    entries = sorted(entries, key=lambda e: -len(e.get("uniprotSequence") or ""))
+    for entry in entries:
+        model_seq = entry.get("uniprotSequence") or ""
+        # A model shorter than the crystal cannot cover it, and alignment is the
+        # expensive step, so skip those without aligning.
+        if len(model_seq) < len(crystal) * CONFIG["af_min_coverage"]:
+            continue
+        coverage = sequence_coverage(crystal, model_seq)
+        if coverage is not None:
+            best = max(best, coverage)
+        if best >= 0.999:
+            break
+    return best
 
 
 def filter_alphafold(candidates):
-    """Keep only candidates that have an AlphaFold model, checked in parallel."""
-    accessions = [c["uniprot"] for c in candidates]
+    """Keep candidates whose crystallised sequence is covered by a real model."""
     with ThreadPoolExecutor(max_workers=CONFIG["af_workers"]) as pool:
-        found = list(pool.map(af_model_exists, accessions))
-    kept = [c for c, ok in zip(candidates, found) if ok]
-    print("  {0} of {1} have AlphaFold models".format(len(kept), len(candidates)))
+        coverages = list(pool.map(af_best_coverage, candidates))
+
+    threshold = CONFIG["af_min_coverage"]
+    kept = [c for c, cov in zip(candidates, coverages) if cov >= threshold]
+    none_at_all = sum(1 for cov in coverages if cov == 0.0)
+    partial = len(candidates) - len(kept) - none_at_all
+    print("  {0} of {1} have an AlphaFold model covering the crystallised "
+          "sequence".format(len(kept), len(candidates)))
+    print("    {0} with no usable model, {1} whose model does not cover it "
+          "(coverage below {2})".format(none_at_all, partial, threshold))
     return kept
 
 
