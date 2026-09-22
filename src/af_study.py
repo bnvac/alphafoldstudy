@@ -26,6 +26,7 @@ Run with:  python af_study.py
 """
 
 import csv
+import hashlib
 import importlib
 import os
 import subprocess
@@ -311,13 +312,37 @@ def select_af_entry(entries, exp_seq):
     return max(entries, key=rank)
 
 
-def _mark_selected(marker_path):
-    """Record that this accession has been through AlphaFold model selection."""
+def _selection_key(exp_seq):
+    """Short digest identifying the chain a cached model was selected for."""
+    return hashlib.sha1((exp_seq or "").encode("utf-8")).hexdigest()[:16]
+
+
+def _mark_selected(marker_path, exp_seq):
+    """Record which chain this accession's cached model was selected for.
+
+    The chain matters, not just the accession. One accession can be deposited
+    as several different mature chains: poliovirus P03300 appears as VP1 in one
+    entry and VP4 in another, and the right AlphaFold model differs between
+    them. A marker recording only "this accession was resolved" would let a
+    model chosen for VP1 be reused against a VP4 crystal, which is how a
+    rebuilt registry reintroduced two mismatches that selection had passed.
+    """
     try:
         with open(marker_path, "w") as handle:
-            handle.write("selected\n")
+            handle.write(_selection_key(exp_seq) + "\n")
     except OSError:
         pass  # The marker is an optimisation; failing to write it is harmless.
+
+
+def _marker_matches(marker_path, exp_seq):
+    """True when the cached model was selected for this same chain."""
+    if not exp_seq:
+        return False
+    try:
+        with open(marker_path) as handle:
+            return handle.read().strip() == _selection_key(exp_seq)
+    except OSError:
+        return False
 
 
 def af_model_covers(uniprot, exp_seq, min_overlap=0.5):
@@ -355,8 +380,8 @@ def download_alphafold(uniprot, exp_seq=None):
         # selection. Without it, an accession whose best available model still
         # does not match, such as a crystal of a different strain, would be
         # deleted and re-downloaded on every single run.
-        if os.path.exists(marker) or af_model_covers(uniprot, exp_seq):
-            _mark_selected(marker)
+        if _marker_matches(marker, exp_seq) or af_model_covers(uniprot, exp_seq):
+            _mark_selected(marker, exp_seq)
             return "skip"
         # Cached model does not contain the crystallised chain. Remove it so the
         # code below can resolve a better one.
@@ -387,7 +412,7 @@ def download_alphafold(uniprot, exp_seq=None):
                         file_url = entry.get(key)
                         if file_url and http_download(file_url, prefix + ext, CONFIG["request_timeout"]):
                             time.sleep(CONFIG["request_sleep"])
-                            _mark_selected(marker)
+                            _mark_selected(marker, exp_seq)
                             return outcome
         except Exception as exc:
             print("  AlphaFold API fallback failed for {0}: {1}".format(uniprot, exc))
@@ -400,7 +425,7 @@ def download_alphafold(uniprot, exp_seq=None):
             url = CONFIG["af_url"].format(uniprot=uniprot, version=version)
             if http_download(url, prefix + ".pdb", CONFIG["request_timeout"]):
                 time.sleep(CONFIG["request_sleep"])
-                _mark_selected(marker)
+                _mark_selected(marker, exp_seq)
                 return outcome
             time.sleep(CONFIG["request_sleep"])
     return "fail"
