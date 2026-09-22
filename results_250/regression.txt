@@ -1,26 +1,26 @@
                             OLS Regression Results                            
 ==============================================================================
-Dep. Variable:               tm_score   R-squared:                       0.155
-Model:                            OLS   Adj. R-squared:                  0.143
-Method:                 Least Squares   F-statistic:                     13.28
-Date:                Sat, 19 Sep 2026   Prob (F-statistic):           5.41e-08
-Time:                        23:48:04   Log-Likelihood:                 116.02
-No. Observations:                 221   AIC:                            -224.0
-Df Residuals:                     217   BIC:                            -210.4
+Dep. Variable:               tm_score   R-squared:                       0.170
+Model:                            OLS   Adj. R-squared:                  0.159
+Method:                 Least Squares   F-statistic:                     15.66
+Date:                Tue, 22 Sep 2026   Prob (F-statistic):           2.69e-09
+Time:                        14:31:10   Log-Likelihood:                 119.22
+No. Observations:                 233   AIC:                            -230.4
+Df Residuals:                     229   BIC:                            -216.6
 Df Model:                           3                                         
 Covariance Type:            nonrobust                                         
 =================================================================================
                     coef    std err          t      P>|t|      [0.025      0.975]
 ---------------------------------------------------------------------------------
-Intercept         0.9244      0.371      2.492      0.013       0.193       1.656
-disorder_pred    -0.1741      0.050     -3.451      0.001      -0.273      -0.075
-coverage          0.0502      0.374      0.134      0.893      -0.686       0.786
-is_viral         -0.1022      0.020     -5.173      0.000      -0.141      -0.063
+Intercept         0.9135      0.386      2.369      0.019       0.154       1.673
+disorder_pred    -0.2423      0.049     -4.898      0.000      -0.340      -0.145
+coverage          0.0651      0.388      0.168      0.867      -0.700       0.830
+is_viral         -0.0939      0.019     -4.824      0.000      -0.132      -0.056
 ==============================================================================
-Omnibus:                      118.882   Durbin-Watson:                   1.854
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):              489.168
-Skew:                          -2.273   Prob(JB):                    6.00e-107
-Kurtosis:                       8.698   Cond. No.                         81.5
+Omnibus:                      114.136   Durbin-Watson:                   1.972
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):              415.981
+Skew:                          -2.113   Prob(JB):                     4.69e-91
+Kurtosis:                       7.998   Cond. No.                         86.1
 ==============================================================================
 
 Notes:
@@ -31,23 +31,23 @@ Model: tm_score ~ disorder_pred + coverage + is_viral
 Question: does viral origin still predict AlphaFold accuracy once
 disorder and coverage are controlled for?
 
-Sample size used (after dropping missing rows): n = 221
+Sample size used (after dropping missing rows): n = 233
 
 Full model coefficients:
-  disorder_pred  coef = -0.1741, p = 0.0006703 -> significant at 0.05
-  coverage       coef = +0.0502, p = 0.8933 -> not significant at 0.05
-  is_viral       coef = -0.1022, p = 5.235e-07 -> significant at 0.05
+  disorder_pred  coef = -0.2423, p = 1.833e-06 -> significant at 0.05
+  coverage       coef = +0.0651, p = 0.8669 -> not significant at 0.05
+  is_viral       coef = -0.0939, p = 2.567e-06 -> significant at 0.05
 
-CORE ANSWER: is_viral REMAINS significant (p = 5.235e-07) after
+CORE ANSWER: is_viral REMAINS significant (p = 2.567e-06) after
 controlling for disorder and coverage; viral origin carries
 predictive value of its own.
 
 Variance explained (R-squared):
-  disorder-only model  = 0.0468
-  full model           = 0.1551
+  disorder-only model  = 0.0822
+  full model           = 0.1702
 
 Variance inflation factors (multicollinearity, flag if > 5):
   disorder_pred  VIF = 1.001
-  coverage       VIF = 1.031
-  is_viral       VIF = 1.030
+  coverage       VIF = 1.030
+  is_viral       VIF = 1.031
 

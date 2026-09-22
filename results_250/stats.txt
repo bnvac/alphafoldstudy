@@ -5,115 +5,115 @@ p-values are descriptive given the small, convenience-based sample.
 ============================================================
 ALL PROTEINS
 ============================================================
-Usable proteins: 244 total (120 viral, 124 cellular)
+Usable proteins: 246 total (121 viral, 125 cellular)
 
 Mann-Whitney U on TM-score (viral vs cellular)
-  median viral    = 0.9070 (n=120)
-  median cellular = 0.9677 (n=124)
-  U = 3937.0, p = 2.09e-10
-  rank-biserial r = -0.471 (positive: viral higher)
+  median viral    = 0.9276 (n=121)
+  median cellular = 0.9689 (n=125)
+  U = 4326.0, p = 6.645e-09
+  rank-biserial r = -0.428 (positive: viral higher)
 
 Mann-Whitney U on RMSD (viral vs cellular)
-  median viral    = 1.5094 (n=120)
-  median cellular = 0.9751 (n=124)
-  U = 10465.0, p = 4.081e-08
-  rank-biserial r = +0.407 (positive: viral higher)
+  median viral    = 1.5297 (n=121)
+  median cellular = 0.9926 (n=125)
+  U = 10674.0, p = 2.466e-08
+  rank-biserial r = +0.411 (positive: viral higher)
 
 Spearman: disorder% vs TM-score (overall)
-  rho = -0.186, p = 0.00357 (n=244)
+  rho = -0.198, p = 0.001827 (n=246)
 
 Spearman: pLDDT vs TM-score (overall)
-  rho = +0.534, p = 2.038e-19 (n=244)
+  rho = +0.578, p = 2.711e-23 (n=246)
 
 Spearman: pLDDT vs TM-score (viral only)
-  rho = +0.511, p = 2.438e-09 (n=120)
+  rho = +0.601, p = 3.005e-13 (n=121)
 
 Spearman: pLDDT vs TM-score (cellular only)
-  rho = +0.487, p = 9.69e-09 (n=124)
+  rho = +0.464, p = 4.997e-08 (n=125)
 
 Kruskal-Wallis: TM-score across disorder bins
-  bin 0-25    n=182
-  bin 25-50   n=37
-  bin 50-75   n=18
-  bin 75-100  n=7
-  H = 18.762, p = 0.0003062 across 4 bins
+  bin 0-25    n=190
+  bin 25-50   n=33
+  bin 50-75   n=15
+  bin 75-100  n=8
+  H = 23.705, p = 2.878e-05 across 4 bins
 
 ============================================================
 COVERAGE-FILTERED (coverage >= 0.80)
 ============================================================
-Usable proteins: 221 total (105 viral, 116 cellular)
+Usable proteins: 233 total (114 viral, 119 cellular)
 
 Mann-Whitney U on TM-score (viral vs cellular)
-  median viral    = 0.9195 (n=105)
-  median cellular = 0.9697 (n=116)
-  U = 3285.0, p = 3.461e-09
-  rank-biserial r = -0.461 (positive: viral higher)
+  median viral    = 0.9272 (n=114)
+  median cellular = 0.9695 (n=119)
+  U = 3856.0, p = 1.271e-08
+  rank-biserial r = -0.432 (positive: viral higher)
 
 Mann-Whitney U on RMSD (viral vs cellular)
-  median viral    = 1.4790 (n=105)
-  median cellular = 0.9556 (n=116)
-  U = 8711.0, p = 3.381e-08
-  rank-biserial r = +0.430 (positive: viral higher)
+  median viral    = 1.5272 (n=114)
+  median cellular = 0.9872 (n=119)
+  U = 9631.0, p = 3.089e-08
+  rank-biserial r = +0.420 (positive: viral higher)
 
 Spearman: disorder% vs TM-score (overall)
-  rho = -0.174, p = 0.009475 (n=221)
+  rho = -0.162, p = 0.01357 (n=233)
 
 Spearman: pLDDT vs TM-score (overall)
-  rho = +0.568, p = 2.607e-20 (n=221)
+  rho = +0.570, p = 1.847e-21 (n=233)
 
 Spearman: pLDDT vs TM-score (viral only)
-  rho = +0.569, p = 2.416e-10 (n=105)
+  rho = +0.588, p = 5.809e-12 (n=114)
 
 Spearman: pLDDT vs TM-score (cellular only)
-  rho = +0.501, p = 1.058e-08 (n=116)
+  rho = +0.467, p = 8.84e-08 (n=119)
 
 Kruskal-Wallis: TM-score across disorder bins
-  bin 0-25    n=167
-  bin 25-50   n=35
-  bin 50-75   n=15
-  bin 75-100  n=4
-  H = 11.234, p = 0.01052 across 4 bins
+  bin 0-25    n=182
+  bin 25-50   n=33
+  bin 50-75   n=13
+  bin 75-100  n=5
+  H = 14.056, p = 0.002829 across 4 bins
 
-dropped 23 (15 viral, 8 cellular) as fragment mismatches
+dropped 13 (7 viral, 6 cellular) as fragment mismatches
 
 ============================================================
 EXTRA STATISTICAL TESTS (appended by extra_stats.py)
-Coverage-filtered set: 221 proteins (105 viral, 116 cellular).
+Coverage-filtered set: 233 proteins (114 viral, 119 cellular).
 These tests were added after the fact; the blocks above are unchanged.
 Recomputed from the rounded values in metrics.csv, so the last digits
 can differ from the full-precision values in the blocks above.
 ============================================================
 
 Shapiro-Wilk normality test on TM-score
-  viral     W = 0.7107, p = 4.358e-13 -> not normal (reject normality)
-  cellular  W = 0.6008, p = 2.857e-16 -> not normal (reject normality)
+  viral     W = 0.7099, p = 1.055e-13 -> not normal (reject normality)
+  cellular  W = 0.5575, p = 2.535e-17 -> not normal (reject normality)
 
 Welch t-test (parametric) next to Mann-Whitney (rank-based)
-  TM-score: Welch t = -4.991, Welch p = 1.802e-06; Mann-Whitney p = 3.505e-09
+  TM-score: Welch t = -4.524, Welch p = 1.135e-05; Mann-Whitney p = 1.3e-08
     the two tests agree at alpha 0.05.
-  RMSD: Welch t = 5.437, Welch p = 1.875e-07; Mann-Whitney p = 3.381e-08
+  RMSD: Welch t = 5.356, Welch p = 2.43e-07; Mann-Whitney p = 3.089e-08
     the two tests agree at alpha 0.05.
 
 Fisher exact test, failure = TM-score < 0.5
   failure vs viral/cellular
-    viral          fail=10  pass=95
-    cellular       fail=1   pass=115
-    odds ratio = 12.11, p = 0.003667
+    viral          fail=10  pass=104
+    cellular       fail=2   pass=117
+    odds ratio = 5.625, p = 0.01721
   failure vs disordered/ordered (disorder_pred >= 0.5)
-    disordered     fail=3   pass=16
-    ordered        fail=8   pass=194
-    odds ratio = 4.547, p = 0.05732
+    disordered     fail=4   pass=14
+    ordered        fail=8   pass=207
+    odds ratio = 7.393, p = 0.008458
 
 Winsorized re-run: TM-score clipped at 5th/95th percentiles
-  clip bounds: [0.5369, 0.9945]
-  Mann-Whitney p: raw = 3.505e-09, winsorized = 3.691e-09
-  Welch t p:      raw = 1.802e-06, winsorized = 5.775e-07
+  clip bounds: [0.5161, 0.9947]
+  Mann-Whitney p: raw = 1.3e-08, winsorized = 1.37e-08
+  Welch t p:      raw = 1.135e-05, winsorized = 4.153e-06
   (rank-based Mann-Whitney barely moves; a large shift in Welch p
   would show the low-TM tail is driving the parametric result.)
 
 Pairwise Mann-Whitney between adjacent disorder bins (Bonferroni)
   3 adjacent pair(s) testable (both bins n>=2); Bonferroni factor 3.
-  0-25 vs 25-50 (n=167, n=35): U = 3278, raw p = 0.2596, Bonferroni p = 0.7787
-  25-50 vs 50-75 (n=35, n=15): U = 304.5, raw p = 0.3796, Bonferroni p = 1
-  50-75 vs 75-100 (n=15, n=4): U = 51, raw p = 0.03664, Bonferroni p = 0.1099
+  0-25 vs 25-50 (n=182, n=33): U = 3156, raw p = 0.6417, Bonferroni p = 1
+  25-50 vs 50-75 (n=33, n=13): U = 275.5, raw p = 0.1399, Bonferroni p = 0.4198
+  50-75 vs 75-100 (n=13, n=5): U = 56, raw p = 0.01937, Bonferroni p = 0.05812
 
