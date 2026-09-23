@@ -93,7 +93,7 @@ STEP 4. Run something.
   Nothing needs to be built first. Two protein lists ship with the repo:
 
     proteins_250.csv    250 proteins, 125 viral and 125 cellular
-    proteins_1000.csv   1000 proteins, 445 viral and 555 cellular
+    proteins_1000.csv   1000 proteins, 375 viral and 625 cellular
 
   proteins.csv is a copy of the 250 list and is what runs by default. To use
   the larger one instead:
@@ -107,7 +107,7 @@ STEP 4. Run something.
     python src/make_protein_lists.py --sizes 250 1000
 
   A word on the sizes. The 250 list is evenly balanced. The 1000 list takes
-  every viral protein that qualifies, and 445 is the ceiling: that is how many
+  every viral protein that qualifies, and 375 is the ceiling: that is how many
   distinct viral proteins the PDB holds once polyproteins and accessions with
   no AlphaFold model are removed. The imbalance is a property of the data.
 

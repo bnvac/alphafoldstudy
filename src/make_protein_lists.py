@@ -11,8 +11,9 @@ drops from hours to a couple of minutes.
 
 Written registries (committed to the repo so nobody has to rebuild them):
 
-    proteins_250.csv     250 proteins, balanced viral and cellular
-    proteins_1000.csv    1000 proteins, balanced viral and cellular
+    proteins_250.csv     250 proteins, balanced 125 viral and 125 cellular
+    proteins_1000.csv    1000 proteins, 375 viral and 625 cellular; uneven
+                         because 375 is every viral protein that qualifies
 
 Selection rules, matching the study design:
 
@@ -417,6 +418,16 @@ def main():
                   " the limiting group is capped by what the PDB contains".format(
                       len(viral), len(cellular)))
         write_csv("proteins_{0}.csv".format(size), rows)
+
+        # proteins.csv is what af_study.py reads when no --registry is given, so
+        # it is refreshed from the smallest list here. Leaving it to be synced by
+        # hand is how it went stale before: a rebuild produced new
+        # proteins_250.csv while the default kept serving the previous
+        # selection, so a fresh clone silently ran the old dataset.
+        if size == min(args.sizes):
+            write_csv("proteins.csv", rows)
+            print("  proteins.csv: refreshed from the {0}-protein list "
+                  "(this is the default registry)".format(size))
 
     print("\nDone. Point the study at one of them:")
     print("  python src/af_study.py --registry proteins_250.csv")

@@ -1,17 +1,10 @@
 name,type,pdb_id,pdb_chain,uniprot,resolution
-PDCoV IL121_2014 receptor binding domain,viral,11ZW,A,F1NWE3,2.80
 Glycoprotein,viral,11LP,A,P08667,2.92
 Nucleoprotein,viral,10ZO,B,A0A1Q1NMU1,1.65
-ORF9b protein,viral,13UE,A,P0DTD2,1.65
-P1/MAHONEY POLIOVIRUS,viral,1AL2,1,P03300,2.90
-INFLUENZA VIRUS MATRIX PROTEIN,viral,1AA7,A,P03485,2.08
+ORF9b protein,viral,13VA,A,P0DTD2,1.70
 REGULATORY PROTEIN E2,viral,1A7G,E,P17383,2.40
 TOPOISOMERASE I,viral,1A41,A,P68698,2.30
 HIV-1 PROTEASE,viral,1A30,A,P04585,2.00
-PROTEIN (INTEGRASE),viral,1C0M,A,P03354,2.53
-REGULATORY PROTEIN E2,viral,1BY9,A,P03120,2.20
-BLUETONGUE VIRUS COAT PROTEIN VP7,viral,1BVP,1,P69361,2.60
-CYCLIN HOMOLOG,viral,1BU2,A,Q01043,3.00
 VP39,viral,1BKY,A,P07617,2.00
 BOVINE ENTEROVIRUS COAT PROTEINS VP1 TO VP4,viral,1BEV,4,P12915,3.00
 PROTEASE,viral,1BAI,A,P03322,2.40
@@ -19,89 +12,79 @@ PROTEIN (NEURAMINIDASE),viral,1B9V,A,P03474,2.35
 PROTEIN (NUCLEAR PROTEIN EBNA1),viral,1B3T,A,P03211,2.20
 "PROTEIN (CRICKET PARALYSIS VIRUS, VP4)",viral,1B35,D,P13418,2.40
 HUMAN RHINOVIRUS 16 COAT PROTEIN,viral,1AYN,4,P23008,2.90
-HUMAN RHINOVIRUS 16 COAT PROTEIN,viral,1AYN,3,Q82122,2.90
 ADENOVIRAL PROTEINASE,viral,1AVP,A,P03252,2.60
-PROTEIN (COXSACKIEVIRUS A9),viral,1D4M,1,P21404,2.90
-HIV-1 ENVELOPE GLYCOPROTEIN GP41,viral,1DLB,A,P04578,2.00
+P1/MAHONEY POLIOVIRUS,viral,1ASJ,4,P03300,2.90
+INFLUENZA VIRUS MATRIX PROTEIN,viral,1AA7,A,P03485,2.08
+PROTEIN (COXSACKIEVIRUS A9),viral,1D4M,4,P21404,2.90
 PROTEIN (REVERSE TRANSCRIPTASE),viral,1D1U,A,P03355,2.30
 TYPE 2 RHINOVIRUS 3C PROTEASE,viral,1CQQ,A,P04936,1.85
 VIRAL CHEMOKINE INHIBITOR,viral,1CQ3,A,Q85307,1.85
 PROTEIN (VIRAL MACROPHAGE INFLAMMATORY PROTEIN-II),viral,1CM9,A,Q98157,2.10
 ICE INHIBITOR,viral,1C8O,A,P07385,2.90
-HIV-1 ENVELOPE PROTEIN CHIMERA CONSISTING OF A FRAGMENT OF GCN4 ZIPPER CLONED N-TERMINAL TO TWO FRAGMENTS OF GP41,viral,1ENV,A,P03069,2.60
+PROTEIN (INTEGRASE),viral,1C0M,A,P03354,2.53
+REGULATORY PROTEIN E2,viral,1BY9,A,P03120,2.20
+BLUETONGUE VIRUS COAT PROTEIN VP7,viral,1BVP,1,P69361,2.60
+CYCLIN HOMOLOG,viral,1BU2,A,Q01043,3.00
 PROTEASE,viral,1FL1,A,Q2HRB6,2.20
 MATURE CAPSID PROTEIN BETA,viral,1F8V,A,Q9J7Z0,3.00
 GAMMA HERPESVIRUS CYCLIN,viral,1F5Q,B,P89883,2.50
 POLIOVIRUS TYPE 2 COAT PROTEINS VP1 TO VP4,viral,1EAH,4,P06210,2.90
 THYMIDINE KINASE,viral,1E2P,A,P0DTH5,2.50
-FUSION PROTEIN E1,viral,1I9W,A,P03315,3.00
-Early 35 kDa protein,viral,1I4E,A,P08160,3.00
 HUMAN RHINOVIRUS 14 COAT PROTEIN (SUBUNIT VP4),viral,1HRV,4,P03303,3.00
 HEPATITIS A VIRUS 3C PROTEINASE,viral,1HAV,B,P08617,2.00
-MYB TRANSFORMING PROTEIN,viral,1H8A,C,P01104,2.23
 MATRIX PROTEIN VP40,viral,1H2D,A,Q05128,2.60
-SINDBIS VIRUS CAPSID PROTEIN,viral,1KXF,A,P03316,2.38
-RNA-DIRECTED RNA POLYMERASE,viral,1KHW,A,P27410,2.70
 gp42 Protein,viral,1KG0,C,P03205,2.65
 PROTEIN (FIBER KNOB PROTEIN),viral,1KAC,A,P36711,2.60
 HERPESVIRUS ENTRY MEDIATOR,viral,1JMA,B,Q92956,2.65
-Protein K3,viral,1LUZ,A,P18378,1.80
-URACIL-DNA GLYCOSYLASE INHIBITOR,viral,1LQG,C,P14739,2.90
-AAV-2 capsid protein,viral,1LP3,A,P03135,3.00
+FUSION PROTEIN E1,viral,1I9W,A,P03315,3.00
+Early 35 kDa protein,viral,1I4E,A,P08160,3.00
+SINDBIS VIRUS CAPSID PROTEIN,viral,1KXF,A,P03316,2.38
 Adsorption protein P2,viral,1N7V,A,P27378,2.20
 Large T Antigen,viral,1N25,A,P03070,2.80
 MOLONEY MURINE LEUKEMIA VIRUS P15,viral,1MOF,A,P03385,1.70
 Core protein p15,viral,1MN8,A,P03332,1.00
 M3 Protein,viral,1ML0,A,O41925,2.80
-PROTEIN (HTLV-1 GP21 ECTODOMAIN/MALTOSE-BINDING PROTEIN CHIMERA),viral,1MG1,A,P0AEX9,2.50
 Rep protein,viral,1M55,A,Q9YJC1,1.40
-ADENOVIRUS FIBRE,viral,1QIU,A,P03275,2.40
+Protein K3,viral,1LUZ,A,P18378,1.80
+URACIL-DNA GLYCOSYLASE INHIBITOR,viral,1LQG,C,P14739,2.90
+AAV-2 capsid protein,viral,1LP3,A,P03135,3.00
 "POLIOVIRUS TYPE 3, SABIN STRAIN",viral,1PVC,4,P03302,2.40
 CAPSID PROTEIN P40,viral,1O6E,A,P03234,2.30
 HUMAN RHINOVIRUS 3 COAT PROTEIN,viral,1RHI,4,Q82081,3.00
 Replication protein E1,viral,1R9W,A,P06789,1.80
 HPV11 REGULATORY PROTEIN E2,viral,1R6N,A,P04015,2.40
-34L protein,viral,1SFU,A,Q9DHS8,2.00
+ADENOVIRUS FIBRE,viral,1QIU,A,P03275,2.40
 PROTEIN (FUSION GLYCOPROTEIN),viral,1SVF,A,P04849,1.40
-VIRAL INTERLEUKIN-10,viral,1VLK,A,P03180,1.90
+34L protein,viral,1SFU,A,Q9DHS8,2.00
 FIBER PROTEIN,viral,1UXE,A,Q64823,2.00
 FIBER PROTEIN,viral,1UXB,A,Q64822,1.75
-"PROTEIN (FUSION PROTEIN CONSISTING OF MINOR COAT PROTEIN, GLYCINE RICH LINKER, TOLA, AND A HIS TAG)",viral,1TOL,A,P19934,1.85
-THEILER'S MURINE ENCEPHALOMYELITIS VIRUS (SUBUNIT VP4),viral,1TME,4,P13899,2.80
-Hemagglutinin-neuraminidase,viral,1Z50,A,P04850,2.80
+Nonstructural protein NS1,viral,1XEQ,A,P03502,2.10
 Virion membrane protein,viral,1YPY,A,P07612,1.51
 polynucleotide 5'-phosphatase,viral,1YN9,A,P24656,1.50
+Viral interleukin-10 homolog,viral,1Y6N,L,P03180,2.70
 Genome polyprotein,viral,1XR6,A,P12916,2.50
-Nonstructural protein NS1,viral,1XEQ,A,P03502,2.10
 SARS ORF7A ACCESSORY PROTEIN,viral,1XAK,A,P59635,1.80
 SINDBIS VIRUS CAPSID PROTEIN,viral,1WYK,A,P27285,2.00
-"Fusion glycoprotein F0,Fusion glycoprotein F0",viral,1WP8,A,O89342,2.20
-fusion protein,viral,1WP7,A,Q9IH63,2.20
 VARICELLA-ZOSTER VIRUS PROTEASE,viral,1VZV,A,P09286,3.00
 Spike protein S1,viral,22HG,A,P0DTC2,2.61
+Hemagglutinin-neuraminidase,viral,1Z50,A,P04850,2.80
+Genome polyprotein,viral,29JC,A,Q65900,1.80
+Protease 3C,viral,29HM,A,Q68T42,1.80
+"Regulatory protein IE1,HLA class II histocompatibility antigen DR beta chain",viral,28ZB,B,Q5Y7D1,2.43
+Nucleoprotein,viral,26UI,A,P0DTC9,1.85
+Structural protein,viral,26DE,W,X5I365,2.73
+HYPOTHETICAL PROTEIN 5,viral,2CME,E,P59636,2.80
+NUCLEOCAPSID PROTEIN,viral,2CJR,A,P59595,2.50
+33 KDA EARLY PROTEIN,viral,2CH8,A,P03228,2.30
+NUCLEOCAPSID PROTEIN,viral,2CA1,A,P69596,2.60
+BZLF1 TRANS-ACTIVATOR PROTEIN,viral,2C9L,Y,P03206,2.25
+DEOXYURIDINE 5'-TRIPHOSPHATE NUCLEOTIDOHYDROLASE,viral,2BT1,A,P03195,2.70
 PROTEIN (BLACK BEETLE VIRUS CAPSID PROTEIN),viral,2BBV,A,P04329,2.80
 Viral CASP8 and FADD-like apoptosis regulator,viral,2BBR,A,Q98325,1.20
 coat protein,viral,2BBD,A,Q6Q0J0,2.04
 E7 protein,viral,2B9D,A,P06465,1.60
 Nonstructural protein V,viral,2B5L,C,P11207,2.85
 B2 protein,viral,2AZ2,A,P68831,2.60
-Genome polyprotein,viral,29JC,A,Q65900,1.80
-Protease 3C,viral,29HM,A,Q68T42,1.80
-"Regulatory protein IE1,HLA class II histocompatibility antigen DR beta chain",viral,28ZB,B,Q5Y7D1,2.43
-Nucleoprotein,viral,26UI,A,P0DTC9,1.85
-Structural protein,viral,26DE,W,X5I365,2.73
-25kDa structural protein VP25,viral,2ED6,A,Q9ICB7,2.00
-EBOLA VIRUS ENVELOPE GLYCOPROTEIN,viral,2EBO,A,Q05320,1.90
-DU,viral,2D4N,A,P07570,1.53
-HYPOTHETICAL PROTEIN 5,viral,2CME,E,P59636,2.80
-RNA-DIRECTED RNA POLYMERASE,viral,2CKW,A,Q69014,2.30
-NUCLEOCAPSID PROTEIN,viral,2CJR,A,P59595,2.50
-33 KDA EARLY PROTEIN,viral,2CH8,A,P03228,2.30
-NUCLEOCAPSID PROTEIN,viral,2CA1,A,P69596,2.60
-BZLF1 TRANS-ACTIVATOR PROTEIN,viral,2C9L,Y,P03206,2.25
-DEOXYURIDINE 5'-TRIPHOSPHATE NUCLEOTIDOHYDROLASE,viral,2BT1,A,P03195,2.70
-DNA topoisomerase 1,viral,2H7G,X,P32989,1.90
-Hypothetical protein BQLF2,viral,2H3R,A,P88989,2.70
 Nonstructural protein 2,viral,2GU0,A,Q9PY93,2.80
 EVM001,viral,2GRK,A,Q9JFS0,2.60
 wsv230,viral,2GJ2,A,Q91LD0,2.35
@@ -110,91 +93,105 @@ Poly(A) polymerase catalytic subunit,viral,2GAF,D,P23371,2.40
 Glutaredoxin-2,viral,2G2Q,A,P68460,2.50
 Fusion glycoprotein F0,viral,2FYZ,A,P11236,2.20
 Chymotrypsin-like cysteine proteinase,viral,2FYR,A,Q83883,2.20
-URACIL-DNA GLYCOSYLASE,viral,2J8X,A,P12888,2.30
+25kDa structural protein VP25,viral,2ED6,A,Q9ICB7,2.00
+EBOLA VIRUS ENVELOPE GLYCOPROTEIN,viral,2EBO,A,Q05320,1.90
+DU,viral,2D4N,A,P07570,1.53
 STIV B116,viral,2J85,A,Q6Q0K9,2.39
 FIBER PROTEIN,viral,2J2J,A,Q65914,1.50
 AVIAN ADENOVIRUS CELO LONG FIBRE,viral,2IUN,A,Q64761,2.80
-Spike glycoprotein,viral,2IEQ,A,Q6Q1S2,1.75
 Nucleocapsid protein,viral,2IC9,A,Q89462,2.00
 Nucleocapsid,viral,2I9F,A,P19810,2.00
 Glutaredoxin-1,viral,2HZF,A,Q8JLF5,1.80
 helicase nsP2,viral,2HWK,A,Q9WIJ1,2.45
-"Cyclin-T1, Protein Tat",viral,2PK2,A,O60563,2.67
-Dual specificity protein phosphatase,viral,2P4D,A,P0DOQ5,1.80
+DNA topoisomerase 1,viral,2H7G,X,P32989,1.90
+Hypothetical protein BQLF2,viral,2H3R,A,P88989,2.70
 Deoxyuridine 5'-triphosphate nucleotidohydrolase,viral,2OL1,A,P17374,1.80
+URACIL-DNA GLYCOSYLASE,viral,2J8X,A,P12888,2.30
 Core protein P7,viral,2Q82,A,Q94M07,1.83
-AFV1-102,viral,2WB6,A,Q70LC3,1.95
-Protein cereblon,cellular,10AY,B,Q96SW2,2.90
-Tyrosine-protein kinase Fyn,cellular,10DJ,A,P06241,2.22
+Dual specificity protein phosphatase,viral,2P4D,A,P0DOQ5,1.80
+PROTEIN A41,viral,2VGA,A,P24766,1.90
+MRNA-CAPPING ENZYME SMALL SUBUNIT,viral,2VDW,B,P04318,2.70
+VACCINIA VIRUS CAPPING ENZYME D1 SUBUNIT,viral,2VDW,A,P04298,2.70
+CAPSID PROTEIN P27,viral,2V4X,A,P31622,1.50
+GLYCOPROTEIN G,viral,2X9M,A,O89343,2.90
+HYPOTHETICAL PROTEIN ORF126,viral,2X5R,A,Q6ZYF6,2.00
+HYPOTHETICAL PROTEIN ORF131,viral,2X5C,A,Q6ZYH1,1.80
+HYPOTHETICAL PROTEIN ORF137,viral,2X4J,A,Q6ZYJ4,1.62
+HYPOTHETICAL PROTEIN ORF239,viral,2X3M,A,Q6ZYJ2,1.45
+POLYHEDRIN,viral,2WUX,A,P04871,1.84
+PUTATIVE FIBER PROTEIN,viral,2WT2,A,Q83467,2.50
+ALKALINE EXONUCLEASE,viral,2W45,A,P03217,3.00
+PYRSV_GP04,viral,2VXZ,A,Q6ZYJ9,1.70
+HEMAGGLUTININ-NEURAMINIDASE,viral,2VWD,A,Q9IH62,2.25
+PROTEIN B15,viral,2VVY,A,P24772,2.69
 Histone H3.2,cellular,10GJ,A,Q71DI3,2.80
 Histone H2A type 1,cellular,10GJ,C,P0C0S8,2.80
-Histone H2B type 1-C/E/F/G/I,cellular,10GJ,D,P62807,2.80
-Histone H4,cellular,10GK,B,P62805,2.70
-NAD(P)H dehydrogenase [quinone] 1,cellular,10QV,A,P15559,1.90
-Histone H2A type 1-H,cellular,10YI,C,Q96KK5,2.90
-"Histone H3.1,Protein Jade-3",cellular,11AF,A,P68431,2.60
+Histone H2B type 1-C/E/F/G/I,cellular,10GK,D,P62807,2.70
+Histone H4,cellular,10GL,B,P62805,2.50
+Plasma kallikrein,cellular,10KZ,A,P03952,1.78
+DNA ligase 3,cellular,10YE,L,P49916,2.50
+Histone H2A type 1-H,cellular,10YF,C,Q96KK5,3.00
 Phosphatidylinositol 5-phosphate 4-kinase type-2 alpha,cellular,11AD,A,P48426,2.79
 E3 ubiquitin-protein ligase CBL-B,cellular,10ZJ,A,Q13191,1.77
-DNA ligase 3,cellular,10YI,L,P49916,2.90
 Histone H2B type 1-M,cellular,10YI,D,Q99879,2.90
 Histone H2B type 2-F,cellular,10YF,D,Q5QNW6,3.00
+Transmembrane 6 superfamily member 1,cellular,10UP,A,Q9BZW5,2.86
 Mu-type opioid receptor,cellular,10TM,F,P35372,3.00
 WD repeat-containing protein 5,cellular,10TC,A,P61964,2.20
 Proprotein convertase subtilisin/kexin type 9,cellular,10SB,B,Q8NBP7,1.83
 NAD(+) hydrolase SARM1,cellular,10RC,A,Q6SZW1,1.90
-Plasma kallikrein,cellular,10QS,A,P03952,1.73
+NAD(P)H dehydrogenase [quinone] 1,cellular,10QV,A,P15559,1.90
 Tyrosine-protein kinase JAK2,cellular,10PJ,A,O60674,1.59
 Tyrosine-protein kinase JAK1,cellular,10PI,A,P23458,1.54
 Fibroblast growth factor receptor 2,cellular,10OU,A,P21802,1.77
 GTPase KRas,cellular,10NV,A,P01116,1.52
+Microtubule-associated protein tau,cellular,10NO,A,P10636,2.96
 N-glycosylase/DNA lyase,cellular,10MN,A,O15527,2.10
 "Ornithine aminotransferase, mitochondrial",cellular,10LX,A,P04181,1.83
 Serine protease 57,cellular,10KV,B,Q6UWY2,2.75
-"Adenosine receptor A2a,Soluble cytochrome b562",cellular,10KT,A,P29274,2.59
 Chitinase-3-like protein 1,cellular,10KA,A,P36222,2.47
 Serine/threonine-protein kinase Chk1,cellular,10IA,A,O14757,1.74
 GLUTATHIONE S-TRANSFERASE P1-1,cellular,10GS,A,P09211,2.20
 Tyrosine-protein kinase Fgr,cellular,10GA,A,P09769,1.60
+Protein cereblon,cellular,10DW,C,Q96SW2,2.90
 Histone acetyltransferase KAT2A,cellular,10DW,A,Q92830,2.90
+Tyrosine-protein kinase Fyn,cellular,10DJ,A,P06241,2.22
 GTPase HRas,cellular,10DC,A,P01112,2.08
 HBS1-like protein,cellular,10AY,A,Q9Y450,2.90
+Histone-lysine N-methyltransferase SMYD1,cellular,10AX,A,Q8NB12,2.68
 Bifunctional 3'-5' exonuclease/ATP-dependent helicase WRN,cellular,10AP,A,Q14191,2.58
-Eukaryotic peptide chain release factor GTP-binding subunit ERF3A,cellular,12BP,X,P15170,2.90
-Tumor necrosis factor receptor superfamily member 17,cellular,12ER,C,Q02223,2.99
-Guanine nucleotide-binding protein G(i) subunit alpha-1,cellular,12IZ,A,P63096,2.72
-Guanine nucleotide-binding protein G(I)/G(S)/G(T) subunit beta-1,cellular,12IZ,B,P62873,2.72
-Guanine nucleotide-binding protein G(I)/G(S)/G(O) subunit gamma-2,cellular,12IZ,C,P59768,2.72
-Cannabinoid receptor 2,cellular,12IZ,R,P34972,2.72
-Ubiquitin carboxyl-terminal hydrolase isozyme L3,cellular,13CU,A,P15374,1.95
-Membrane-associated tyrosine- and threonine-specific cdc2-inhibitory kinase,cellular,13LV,A,Q99640,2.22
-E3 ubiquitin-protein ligase MYLIP,cellular,13SJ,A,Q8WY64,1.47
-Inositol-tetrakisphosphate 1-kinase,cellular,13LZ,A,Q13572,2.20
-"Calcium uniporter protein, mitochondrial",cellular,13IO,E,Q8NE86,2.98
-"Essential MCU regulator, mitochondrial",cellular,13IO,A,Q9H4I9,2.98
-IST1 homolog,cellular,13GJ,A,P53990,2.00
-Programmed cell death 1 ligand 1,cellular,13FL,C,Q9NZQ7,2.22
-Transforming growth factor beta-1,cellular,13FJ,A,P01137,2.75
-Flavin reductase (NADPH),cellular,13EB,A,P30043,1.82
-Ewing's tumor-associated antigen 1,cellular,13DE,E,Q9NY74,2.90
-HUMAN LYSOZYME,cellular,134L,A,P61626,1.77
+B-cell lymphoma/leukemia 11B,cellular,12UL,A,Q9C0K0,2.81
 Ubiquitin carboxyl-terminal hydrolase 7,cellular,12ZJ,A,Q93009,1.63
+Transforming growth factor beta-1,cellular,13FJ,A,P01137,2.75
+Programmed cell death 1 ligand 1,cellular,13FL,C,Q9NZQ7,2.22
+Flavin reductase (NADPH),cellular,13EB,A,P30043,1.82
+Ubiquitin carboxyl-terminal hydrolase isozyme L3,cellular,13DF,A,P15374,1.84
+Ewing's tumor-associated antigen 1,cellular,13DE,E,Q9NY74,2.90
+Acetylcholinesterase,cellular,13CP,A,P22303,2.94
+Retinol-binding protein 4,cellular,13AH,A,P02753,2.10
+HUMAN LYSOZYME,cellular,134L,A,P61626,1.77
 Glycine N-methyltransferase,cellular,12YI,A,Q14749,1.65
 Cis-aconitate decarboxylase,cellular,12VW,A,A6NK06,1.46
-B-cell lymphoma/leukemia 11B,cellular,12UP,A,Q9C0K0,2.83
 T-cell antigen CD7,cellular,12NP,C,P09564,2.40
 Secreted and transmembrane protein 1,cellular,12NP,A,Q8WVN6,2.40
 REST corepressor 1,cellular,12LP,B,Q9UKL0,2.78
+Cannabinoid receptor 2,cellular,12JA,R,P34972,2.90
+Guanine nucleotide-binding protein G(I)/G(S)/G(O) subunit gamma-2,cellular,12JA,C,P59768,2.90
+Guanine nucleotide-binding protein G(I)/G(S)/G(T) subunit beta-1,cellular,12JA,B,P62873,2.90
+Guanine nucleotide-binding protein G(i) subunit alpha-1,cellular,12JA,A,P63096,2.90
 Mast/stem cell growth factor receptor Kit,cellular,12FJ,AAA,P10721,2.63
 Thrombospondin-1,cellular,12EM,B,P07996,2.07
 "Beta-1,3-glucosyltransferase",cellular,12EM,A,Q6Y288,2.07
+Mitogen-activated protein kinase 8,cellular,12CV,A,P45983,1.50
 CARBONIC ANHYDRASE II,cellular,12CA,A,P00918,2.40
 Gelsolin,cellular,12BY,I,P06396,2.76
+Eukaryotic peptide chain release factor GTP-binding subunit ERF3A,cellular,12BP,X,P15170,2.90
 Retinol-binding protein 2,cellular,12AK,A,P50120,1.37
+14-3-3 protein sigma,cellular,11ZU,A,P31947,2.25
 "Fermitin family homolog 3,Fermitin family homolog 3,Integrin beta-2",cellular,11ZT,A,Q86UX7,2.40
 Phosphatidylinositol 3-kinase catalytic subunit type 3,cellular,11YC,B,Q8NEB9,2.41
 Platelet-derived growth factor receptor beta,cellular,11UE,A,P09619,2.32
 Casein kinase II subunit alpha,cellular,11UC,A,P68400,1.96
-14-3-3 protein sigma,cellular,11SJ,A,P31947,2.40
 Mitogen-activated protein kinase 14,cellular,11OY,A,Q16539,2.02
 Protein O-GlcNAcase 535-704 Peptide,cellular,11LJ,C,O60502,2.33
 Hepatocyte growth factor receptor,cellular,11HQ,A,P08581,2.65
@@ -202,29 +199,24 @@ Telomerase protein component 1,cellular,11GZ,A,Q99973,2.44
 Cyclin-dependent kinases regulatory subunit 2,cellular,11GY,C,P33552,2.40
 G2/mitotic-specific cyclin-B1,cellular,11GY,B,P14635,2.40
 Cyclin-dependent kinase 1,cellular,11GY,A,P06493,2.40
-HEMOGLOBIN (ALPHA CHAIN),cellular,1A00,A,P69905,2.00
-HEMOGLOBIN (BETA CHAIN),cellular,1A00,B,P68871,2.00
-SERINE/THREONINE PROTEIN PHOSPHATASE 5,cellular,1A17,A,P53041,2.45
-ALPHA-THROMBIN (LARGE SUBUNIT),cellular,1A3B,H,P00734,1.80
-S100A10,cellular,1A4P,A,P60903,2.25
-"HLA CLASS I HISTOCOMPATIBILITY ANTIGEN, B-35 B*3501 (ALPHA CHAIN)",cellular,1A9E,A,P01889,2.50
-BETA-2-MICROGLOBULIN,cellular,1A9E,B,P61769,2.50
-HEMOGLOBIN (BETA CHAIN),cellular,1A9W,E,P02100,2.90
-HEPARIN BINDING PROTEIN,cellular,1AE5,A,P20160,2.30
-ALDOSE REDUCTASE,cellular,1ADS,A,P15121,1.65
-RETINOBLASTOMA TUMOR SUPPRESSOR,cellular,1AD6,A,P06400,2.30
-HAEMATOPOETIC CELL KINASE HCK,cellular,1AD5,A,P08631,2.60
+Cyclin-A2,cellular,11GV,B,P20248,1.59
+Cyclin-dependent kinase 2,cellular,11GV,A,P24941,1.59
+ALPHA-THROMBIN (LARGE SUBUNIT),cellular,1ABJ,H,P00734,2.40
 PROTEIN TYROSINE PHOSPHATASE 1B,cellular,1AAX,A,P18031,1.90
 ALZHEIMER'S DISEASE AMYLOID A4 PROTEIN,cellular,1AAP,A,P05067,1.50
 BETA-SPECTRIN,cellular,1AA2,A,Q01082,2.00
+HEMOGLOBIN (BETA CHAIN),cellular,1A9W,E,P02100,2.90
+HEMOGLOBIN (ALPHA CHAIN),cellular,1A9W,A,P69905,2.90
 SPLICEOSOMAL U2B'',cellular,1A9N,B,P08579,2.38
 U2A',cellular,1A9N,A,P09661,2.38
+BETA-2-MICROGLOBULIN,cellular,1A9E,B,P61769,2.50
+"HLA CLASS I HISTOCOMPATIBILITY ANTIGEN, B-35 B*3501 (ALPHA CHAIN)",cellular,1A9E,A,P01889,2.50
 TUMOR NECROSIS FACTOR ALPHA,cellular,1A8M,A,P01375,2.30
-IMMUNOGLOBULIN LAMBDA LIGHT CHAIN DIMER (MCG),cellular,1A8J,H,P01709,2.70
 SERUM TRANSFERRIN,cellular,1A8F,A,P02787,1.80
 MMP-8,cellular,1A86,A,P22894,2.00
 SYK KINASE,cellular,1A81,A,P43405,3.00
 FKBP12,cellular,1A7X,A,P62942,2.00
+HEPARIN BINDING PROTEIN,cellular,1A7S,A,P20160,1.12
 PLASMINOGEN ACTIVATOR INHIBITOR TYPE 1,cellular,1A7C,A,P05121,1.95
 S-ADENOSYLHOMOCYSTEINE HYDROLASE,cellular,1A7A,A,P23526,2.80
 HFE,cellular,1A6Z,A,Q30201,2.60
@@ -238,9 +230,11 @@ ANGIOGENIN,cellular,1A4Y,B,P03950,2.00
 RIBONUCLEASE INHIBITOR,cellular,1A4Y,A,P13489,2.00
 ALPHA-LACTALBUMIN,cellular,1A4V,A,P00709,1.80
 G25K GTP-BINDING PROTEIN,cellular,1A4R,A,P60953,2.50
+S100A10,cellular,1A4P,A,P60903,2.25
 METHYLENETETRAHYDROFOLATE DEHYDROGENASE / METHENYLTETRAHYDROFOLATE CYCLOHYDROLASE,cellular,1A4I,A,P11586,1.50
 UBC9,cellular,1A3S,A,P63279,2.80
 PROTEIN (NUCLEAR FACTOR KAPPA-B P52),cellular,1A3Q,A,Q00653,2.10
+HEMOGLOBIN (BETA CHAIN),cellular,1A3O,B,P68871,1.80
 GALECTIN-3,cellular,1A3K,A,P17931,2.10
 TOPOISOMERASE I,cellular,1A36,A,P11387,2.80
 TRANSFORMING PROTEIN RHOA,cellular,1A2B,A,P61586,2.40
@@ -249,3 +243,9 @@ PROGESTERONE RECEPTOR,cellular,1A28,A,P06401,1.80
 GROWTH HORMONE RECEPTOR,cellular,1A22,B,P10912,2.60
 GROWTH HORMONE,cellular,1A22,A,P01241,2.60
 HMTCP-1,cellular,1A1X,A,P56278,2.00
+C-SRC TYROSINE KINASE,cellular,1A1E,A,P12931,2.20
+SERINE/THREONINE PROTEIN PHOSPHATASE 5,cellular,1A17,A,P53041,2.45
+STROMAL DERIVED FACTOR-1ALPHA,cellular,1A15,A,P48061,2.20
+REGULATOR OF CHROMOSOME CONDENSATION 1,cellular,1A12,A,P18754,1.70
+BETA-TRYPTASE,cellular,1A0L,A,P20231,3.00
+AP-1 FRAGMENT JUN,cellular,1A02,J,P05412,2.70

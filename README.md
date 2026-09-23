@@ -221,27 +221,32 @@ Planned but not yet built:
 ## Results so far
 
 A full 250-protein run is committed in [`results_250/`](results_250/), so you
-can look at the figures and tables without running anything. Of the 250: 6
-excluded for having too few resolved residues, 17 flagged as sequence
-mismatches, 12 as too poorly resolved, leaving **221 analysed**.
+can look at the figures and tables without running anything. Of the 250: 4
+excluded for having too few resolved residues, 4 flagged as sequence
+mismatches, 11 as too poorly resolved, leaving **233 analysed**.
 
-| | viral (n=105) | cellular (n=116) |
+| | viral (n=114) | cellular (n=119) |
 |---|---|---|
-| median TM-score | 0.920 | 0.970 |
-| median pLDDT | 79.0 | 86.8 |
-| median disorder | 10.9% | 14.6% |
+| median TM-score | 0.927 | 0.970 |
+| median pLDDT | 78.9 | 87.9 |
+| median disorder | 10.7% | 12.4% |
 
-Viral proteins are predicted less accurately (p = 3.5e-09, rank-biserial
--0.460), and in the regression **both viral origin (p = 5.2e-07) and disorder
-(p = 0.00067) independently predict accuracy**. They are not confounded: VIFs
+Viral proteins are predicted less accurately (p = 1.3e-08, rank-biserial
+-0.431), and in the regression **both viral origin (p = 2.6e-06) and disorder
+(p = 1.8e-06) independently predict accuracy**. They are not confounded: VIFs
 are near 1.0 and viral proteins are not the more disordered group here.
 
-This result survived a significant correction. An earlier run reported a larger
-raw gap that was partly produced by a bug in this repository, which downloaded
-the wrong AlphaFold model for 33 proteins, all viral. Fixing it recovered 22 of
-them into the analysed set with TM-scores rising from roughly 0.03 to roughly
-0.97. The gap remained. See `results_250/README.md` for the full before and
-after, and for the limitations that go with it.
+The finding survived three versions of the dataset, each rebuilt after fixing a
+defect that was penalising the viral side almost exclusively:
+
+| dataset | mismatches | analysed | is_viral p |
+|---|---|---|---|
+| original | 44 (39 viral) | 206 | 2.8e-07 |
+| after AlphaFold model-selection fix | 17 (12 viral) | 221 | 5.2e-07 |
+| after coverage-validated selection | **4** | **233** | **2.6e-06** |
+
+Each fix should have shrunk the gap if the gap were an artifact. It did not
+move. See `results_250/README.md` for the detail and the limitations.
 
 ---
 
@@ -253,7 +258,7 @@ run.
 | File | Proteins | Viral | Cellular |
 |---|---|---|---|
 | `proteins_250.csv` | 250 | 125 | 125 |
-| `proteins_1000.csv` | 1000 | 445 | 555 |
+| `proteins_1000.csv` | 1000 | 375 | 625 |
 
 `proteins.csv` is a copy of the 250 list and is what runs by default. To use the
 bigger one:
@@ -267,8 +272,10 @@ model. Polyproteins are excluded, for the reason explained at the bottom of this
 page.
 
 The 250 list is evenly balanced and is the better one for the actual comparison.
-The 1000 list is uneven because 445 is simply how many viral proteins qualify;
-there is no larger balanced set available.
+The 1000 list is uneven because 375 is simply how many viral proteins qualify:
+that is every viral protein in the PDB that meets all the criteria and has an
+AlphaFold model actually covering the crystallised region. A balanced set
+therefore cannot exceed 750.
 
 ---
 
