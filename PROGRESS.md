@@ -73,7 +73,17 @@ TM-align, writes per-protein metrics.
 viral proteins scored near zero for reasons unrelated to prediction quality.
 This became the central methodological thread of the project.
 
-**Jun 26 to Jun 29** [mentor] "Follow up meeting!" thread opened.
+**Jun 26, 10:04 AM** [mentor] Progress sent to Dr. Paul. Set expanded to **56
+proteins**, pulled systematically from RCSB rather than hand-picked. Early
+result: AlphaFold2 significantly more accurate on cellular than viral proteins,
+**median TM 0.96 against 0.88, p = 0.0007**, with disorder also tracking
+accuracy. Flagged a scope change in the same message: some viral outliers
+looked like fragment mismatches rather than real prediction errors, where the
+AlphaFold fragment does not contain the crystallised domain, so a coverage
+filter was being added and the framing might lean more on disorder and
+coverage than on viral against cellular alone.
+
+**Jun 29, 10:22 PM** [mentor] Follow-up nudge.
 
 ## July 2026
 
@@ -83,20 +93,42 @@ predicts accuracy once disorder and coverage are controlled for.
 **Jul 2** [code] Added disorder-balanced selection and the per-residue analysis
 layer, measuring local error per amino acid rather than per protein.
 
-**Jul 3 to Jul 8** [mentor] Four-message exchange.
+**Jul 3, 2:33 PM** [mentor] Dr. Paul proposed a Zoom for the 8th or 9th, asked
+how the proteins were chosen systematically and whether a shareable table of
+accessions and annotated functions existed, and shared a then-new Nucleic Acids
+Research paper on using fold prediction (Foldseek, with protein fold class
+databases) to annotate phage genomes more accurately than sequence-homology
+tools such as HMMER.
+
+**Jul 5, 6:12 PM** [mentor] Reply describing the selection procedure in full:
+pull viral and human structures from RCSB, filter by resolution, deduplicate by
+UniProt accession, confirm an AlphaFold model exists, then balance across four
+disorder levels, giving **79 proteins**. Noted working 9 to 5 at BWSI through
+this period, so meetings had to be evenings.
+
+**Jul 8, 9:19 AM** [mentor] Asked to move 15 minutes earlier because of train
+delays.
+
+**Jul 8, 5:15 PM** [mentor] **Zoom meeting held with Dr. Paul.**
 
 **Jul 9** [code] Added figure captions generated from the real numbers, extra
 robustness tests, and the cluster batch and merge tooling.
 
-**Jul 20** [mentor] Sent "Alphafold progress" with four attachments: the first
-substantive results report.
+**Jul 20, 8:41 AM** [mentor] Results report sent with four figures. On the
+coverage-filtered set, Mann-Whitney gave viral against cellular medians of
+**0.95 and 0.965, p = 0.052**, so the narrowed gap was not statistically
+significant, and in the follow-up regression the small remainder was carried by
+intrinsic disorder rather than by the proteins being viral. Figures sent: the
+TM boxplot, pLDDT against TM with fragment artifacts marked, disorder against
+TM, and the per-residue hexbin. Also noted reading the Phold paper, whose
+confidence metric correlates with structure quality much as pLDDT does.
 
 **Jul 20 to Jul 21** [code] Reorganised into `src/`, committed the protein
 registry and generated cluster job files so the work was durable.
 
 ## August 2026
 
-**Aug 2 to Aug 17** [mentor] Continued discussion on the progress thread.
+**Aug 2, 10:04 PM** [mentor] Cluster job files expected by Wednesday.
 
 **Aug 4, 5:00 PM** [school] **Meeting with Ms. Copice.** Status reported:
 
@@ -107,14 +139,29 @@ registry and generated cluster job files so the work was durable.
 - may post a preprint
 - possibly run a literature review, then follow up with the introduction
 
-**Aug 19** [mentor] Dr. Paul replied with an attachment.
+**Aug 12, 3:02 PM** [mentor] Dr. Paul checked in, having been occupied with a
+grant proposal, and proposed a Zoom the following week.
 
-**Aug 20** [mentor] Four messages in one afternoon.
+**Aug 17, 10:49 PM** [mentor] Proposed the 20th at 3 PM.
+
+**Aug 19, 11:19 AM** [mentor] Dr. Paul confirmed, and recommended **ESMFold
+(ESMFold2) and the ESM Protein Atlas**, attaching the original paper. This is
+the origin of the ESMFold comparison listed as future work: ESMFold predicts
+structure without multiple sequence alignments, so it directly tests the
+alignment-scarcity explanation for a viral deficit.
+
+**Aug 20, 2:49 to 2:52 PM** [mentor] Time confirmed.
+
+**Aug 20, 3:00 PM** [mentor] **Zoom meeting held with Dr. Paul.**
 
 **Aug 20** [code] Tidied the codebase and removed a duplicated disorder helper.
 
-**Aug 25** [mentor] "Meeting again soon" thread opened; discussed treating the
-raw viral/cellular gap with caution.
+**Aug 25, 3:12 PM** [mentor] Update sent with the repository link, noting the
+work was close to done and that the setup script, written instructions for the
+conda environment, and the methods section would follow after some cleanup.
+
+**Aug 25, 3:50 PM** [mentor] **Meeting missed.** Dr. Paul had a meeting run
+over and did not join; rescheduled to the following Tuesday at 3 PM.
 
 **Aug 25** [code] Moved fragment exclusion to selection time, so polyprotein
 entries are kept out of the dataset rather than filtered from results. Added
@@ -123,13 +170,19 @@ one-command environment setup and the three-panel comparison figure.
 **Aug 27** [code] Shipped ready-made 250 and 1000 protein registries so the
 repository runs immediately after cloning.
 
-**Aug 30** [mentor] Follow-up sent.
+**Aug 30, 4:02 PM** [mentor] Reschedule confirmed.
 
 ## September 2026
 
-**Sep 1 to Sep 8** [mentor] Three exchanges.
+**Sep 1, 2:28 PM** [mentor] **Meeting cancelled.** Town-wide power outage;
+proposed the same time the following week. Dr. Paul agreed at 2:58 PM.
 
-**Sep 15** [mentor] Exchange with Dr. Paul; two attachments received.
+**Sep 7, 1:02 PM** [mentor] Out of town, proposed Tuesday the 15th at 3 PM.
+
+**Sep 8, 12:35 PM** [mentor] Dr. Paul confirmed the 15th.
+
+**Sep 15, 3:00 PM** [mentor] **Zoom meeting held with Dr. Paul.** Two
+attachments received afterwards at 3:29 PM.
 
 **Sep 15** [code] Rewrote the README as plain-English setup instructions.
 
@@ -170,6 +223,30 @@ Verified the whole pipeline from a clean clone with no cache.
 
 ---
 
+## How the headline number moved
+
+Worth keeping visible, because the story of this project is the correction:
+
+| date | set | viral vs cellular median TM | p |
+|---|---|---|---|
+| Jun 26 | 56 proteins, unfiltered | 0.88 vs 0.96 | 0.0007 |
+| Jul 20 | 79 proteins, coverage-filtered | 0.95 vs 0.965 | 0.052 |
+| Sep 22 | 250 proteins, validated selection | 0.927 vs 0.970 | 1.3e-08 |
+
+The June figure was inflated by fragment artifacts. The July figure removed
+them but on a small set, and could not demonstrate a difference. The September
+figure is on a set three times larger with the artifacts excluded at source,
+and it does.
+
+## Reading shared by Dr. Paul
+
+- **Jul 3** Foldseek-based phage genome annotation, outperforming HMMER
+  (Nucleic Acids Research).
+- **Aug 19** ESMFold2 and the ESM Protein Atlas.
+- Phold, read and discussed in the Jul 20 report.
+
+---
+
 ## Where the result stands
 
 | dataset version | mismatches | analysed | is_viral p |
@@ -188,25 +265,33 @@ shrunk the gap if the gap were an artifact. It did not move.
 
 ## Effort
 
-Measured from the repository: **26 commits across 18 distinct working days**,
-3,452 lines of Python in 8 files, spanning 20 June to 30 September. Roughly 35
-messages in the mentor thread.
+Measured, not estimated: **26 commits across 18 distinct working days**, 3,452
+lines of Python in 8 files, spanning 20 June to 30 September. About 32 messages
+in the mentor thread. **Five meetings held** (Jun 2 with Dr. Paul, Jul 8 by
+Zoom, Aug 4 with Ms. Copice, Aug 20 by Zoom, Sep 15 by Zoom) and two lost, one
+to Dr. Paul's schedule on Aug 25 and one to a power outage on Sep 1.
 
-The hours below are an **estimate**, not a log. Only the commit days and
-message counts are measured; the rest is reconstructed and should be corrected
-where memory says otherwise.
+One constraint worth recording: through July the work ran alongside a 9 to 5
+at BWSI, so development and meetings were evenings and weekends.
+
+The hours below are an **estimate**, not a time log. The commit days, message
+counts and meeting counts are measured; the hours attached to them are
+reconstructed and should be corrected where memory says otherwise.
 
 | Activity | Basis | Estimated hours |
 |---|---|---|
 | Development and debugging | 18 active days at 2 to 4 hours | 36 to 72 |
-| Background reading | AlphaFold, TM-score, disorder prediction, statistics | 10 to 15 |
-| Correspondence | ~35 messages, about half composed | 8 to 10 |
+| Background reading | AlphaFold, TM-score, disorder prediction, statistics, plus the Foldseek, ESMFold and Phold papers | 10 to 15 |
+| Correspondence | ~32 messages, about half composed | 6 to 8 |
 | Writing | methods drafts, project brief, slides | 8 to 12 |
-| Meetings and preparation | Jun 2, Aug 4, Aug 25, plus the MBL visit | 4 to 6 |
+| Meetings and preparation | 5 held, with prep and follow-up | 6 to 8 |
 | **Total** | | **66 to 115** |
 
-A reasonable single figure to quote is **about 90 hours**. Pipeline runs
-themselves take roughly an hour each but are unattended and not counted.
+A reasonable single figure to quote is **about 90 hours**. Pipeline runs take
+roughly an hour each but are unattended and not counted.
+
+The softest assumption is the 2 to 4 hours per active development day; that
+line alone moves the total by more than 30 hours, so adjust it first.
 
 ## Open items
 
