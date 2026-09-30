@@ -142,6 +142,8 @@ registry and generated cluster job files so the work was durable.
 **Aug 12, 3:02 PM** [mentor] Dr. Paul checked in, having been occupied with a
 grant proposal, and proposed a Zoom the following week.
 
+**Aug 14** [mentor] **Meeting held.**
+
 **Aug 17, 10:49 PM** [mentor] Proposed the 20th at 3 PM.
 
 **Aug 19, 11:19 AM** [mentor] Dr. Paul confirmed, and recommended **ESMFold
@@ -267,31 +269,31 @@ shrunk the gap if the gap were an artifact. It did not move.
 
 Measured, not estimated: **26 commits across 18 distinct working days**, 3,452
 lines of Python in 8 files, spanning 20 June to 30 September. About 32 messages
-in the mentor thread. **Five meetings held** (Jun 2 with Dr. Paul, Jul 8 by
-Zoom, Aug 4 with Ms. Copice, Aug 20 by Zoom, Sep 15 by Zoom) and two lost, one
-to Dr. Paul's schedule on Aug 25 and one to a power outage on Sep 1.
+in the mentor thread. **Six meetings held** (Jun 2 with Dr. Paul, Jul 8 by
+Zoom, Aug 4 with Ms. Copice, Aug 14, Aug 20 by Zoom, Sep 15 by Zoom) and two
+lost, one to Dr. Paul's schedule on Aug 25 and one to a power outage on Sep 1.
 
-One constraint worth recording: through July the work ran alongside a 9 to 5
-at BWSI, so development and meetings were evenings and weekends.
+Two things kept the hours down. Through July the work ran alongside a 9 to 5 at
+BWSI, so it happened evenings and weekends. And the implementation was heavily
+AI-assisted, which is why 3,452 lines of Python does not imply the hours that
+figure would normally suggest. The scientific decisions, the debugging and the
+interpretation took the time; typing the code did not.
 
 The hours below are an **estimate**, not a time log. The commit days, message
 counts and meeting counts are measured; the hours attached to them are
-reconstructed and should be corrected where memory says otherwise.
+reconstructed.
 
 | Activity | Basis | Estimated hours |
 |---|---|---|
-| Development and debugging | 18 active days at 2 to 4 hours | 36 to 72 |
-| Background reading | AlphaFold, TM-score, disorder prediction, statistics, plus the Foldseek, ESMFold and Phold papers | 10 to 15 |
-| Correspondence | ~32 messages, about half composed | 6 to 8 |
-| Writing | methods drafts, project brief, slides | 8 to 12 |
-| Meetings and preparation | 5 held, with prep and follow-up | 6 to 8 |
-| **Total** | | **66 to 115** |
+| Development and debugging | 18 active days, AI-assisted | 14 to 20 |
+| Meetings and preparation | 6 held, with prep and follow-up | 7 to 9 |
+| Background reading | AlphaFold, TM-score, disorder prediction, statistics, plus the Foldseek, ESMFold and Phold papers | 5 to 7 |
+| Writing | methods drafts, project brief, slides | 4 to 6 |
+| Correspondence | ~32 messages, about half composed | 3 to 4 |
+| **Total** | | **33 to 46** |
 
-A reasonable single figure to quote is **about 90 hours**. Pipeline runs take
+A reasonable single figure to quote is **about 40 hours**. Pipeline runs take
 roughly an hour each but are unattended and not counted.
-
-The softest assumption is the 2 to 4 hours per active development day; that
-line alone moves the total by more than 30 hours, so adjust it first.
 
 ## Open items
 
