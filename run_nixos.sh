@@ -40,4 +40,7 @@ NIX_EXTRA=()
 nix-instantiate --eval -E '<nixpkgs>' >/dev/null 2>&1 || \
     NIX_EXTRA=(-I "nixpkgs=$NIXPKGS_FALLBACK")
 
-exec nix-shell "${NIX_EXTRA[@]}" nix/fhs.nix --run "$CMD"
+# Passed through the environment rather than --run: see the comment on
+# runScript in nix/fhs.nix. With --run the command is silently never executed.
+export AFS_RUN="$CMD"
+exec nix-shell "${NIX_EXTRA[@]}" nix/fhs.nix

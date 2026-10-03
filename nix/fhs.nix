@@ -71,5 +71,25 @@ in
     export CUDA_VISIBLE_DEVICES=""
   '';
 
-  runScript = "bash";
+  # Commands arrive through AFS_RUN, not through nix-shell's --run.
+  #
+  # buildFHSEnv's .env works by way of a shell hook that execs straight into
+  # the sandbox. nix-shell appends its --run command after that hook, so the
+  # exec means --run is never reached: the sandbox starts a plain interactive
+  # bash, which sees EOF on non-tty stdin and exits 0. A setup script driven
+  # that way reports success while doing nothing at all, with no venv built and
+  # no error printed. That silent no-op is worse than a failure, so the command
+  # is passed in through the environment instead.
+  #
+  # AFS_RUN is unset before the command runs, so a nested shell started from
+  # inside it does not run the command a second time. With AFS_RUN unset the
+  # behaviour is an interactive shell, exactly as the documentation describes.
+  runScript = pkgs.writeShellScript "alphafold-study-run" ''
+    if [ -n "''${AFS_RUN:-}" ]; then
+      command_to_run="$AFS_RUN"
+      unset AFS_RUN
+      exec bash -c "$command_to_run"
+    fi
+    exec bash
+  '';
 }).env

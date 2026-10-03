@@ -192,4 +192,8 @@ for arg in "$@"; do
     INNER="$INNER $(printf '%q' "$arg")"
 done
 
-exec nix-shell "${NIX_EXTRA[@]}" nix/fhs.nix --run "$INNER"
+# Passed through the environment rather than --run: see the comment on
+# runScript in nix/fhs.nix. With --run this script silently did nothing,
+# exiting 0 without building a venv.
+export AFS_RUN="$INNER"
+exec nix-shell "${NIX_EXTRA[@]}" nix/fhs.nix
