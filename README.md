@@ -248,6 +248,16 @@ defect that was penalising the viral side almost exclusively:
 Each fix should have shrunk the gap if the gap were an artifact. It did not
 move. See `results_250/README.md` for the detail and the limitations.
 
+### Mechanism test: ESMFold
+
+Running the same 211 proteins through ESMFold, which uses no sequence
+alignment, **more than doubles the viral gap** (median TM-score gap 0.051 under
+AlphaFold2, 0.130 under ESMFold). AlphaFold2's alignment step is therefore not
+the cause of its viral deficit; it partly rescues viral proteins. The disorder
+penalty is the same under both programs, while the viral penalty doubles. See
+`results_250/esmfold_stats.txt` and `results_250/esmfold_compare.png`, and run
+it with `python src/esmfold_compare.py`.
+
 ---
 
 ## The protein lists

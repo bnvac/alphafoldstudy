@@ -74,6 +74,44 @@ pass is the criticism this filter exists to withstand. Both are predicted at
 prediction failure rather than an indexing artifact, VP4 having little
 independent structure outside the assembled virion.
 
+## The mechanism test: ESMFold
+
+`src/esmfold_compare.py` runs the same proteins through ESMFold, which predicts
+structure from a protein language model and uses no sequence alignment. The
+question is whether AlphaFold2's viral deficit comes from its alignment step.
+211 proteins were scored by both programs (106 viral, 105 cellular); 22 were
+excluded because the ESMFold API accepts at most 400 residues.
+
+| | AlphaFold2 | ESMFold |
+|---|---|---|
+| viral median TM-score | 0.917 | 0.824 |
+| cellular median TM-score | 0.968 | 0.954 |
+| **viral gap** | **0.051** | **0.130** |
+| regression, is_viral coef | -0.098 | -0.226 |
+| regression, disorder coef | -0.232 | -0.238 |
+
+**The viral gap more than doubles when the alignment is taken away.**
+AlphaFold2's per-protein advantage over ESMFold is about five times larger on
+viral proteins (median +0.033) than on cellular ones (+0.006), Mann-Whitney
+p = 0.0014. So the alignment step is not the cause of AlphaFold2's viral
+deficit. If anything it partly rescues viral proteins, and without it they fall
+further behind.
+
+**Disorder and viral origin behave differently.** The disorder penalty is the
+same under both programs (-0.232 against -0.238), so it behaves like a property
+of the protein: hard regardless of method. The viral penalty more than doubles
+between programs, so it behaves like a limitation of the methods, tied to how
+well viral proteins are represented in the sequence data both programs learned
+from. That maps directly onto the project's question, though as a pattern, not
+a proof of mechanism.
+
+ESMFold's confidence tracks its own error closely (pLDDT against TM-score,
+rho = +0.81), more tightly than AlphaFold2's.
+
+Caveat: ESMFold's language model was itself trained on sequence databases in
+which viral proteins are under-represented, so this rules out alignments
+specifically as the cause, not data scarcity in general.
+
 ## Known limitations
 
 - **Sampling is not random.** The list takes the first N of each pool in

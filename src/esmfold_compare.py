@@ -350,9 +350,10 @@ def figure(records, out_png):
     ax1.set_ylim(0, 1.02)
     ax1.set_xlabel("ESMFold TM-score (no alignment)", color=INK)
     ax1.set_ylabel("AlphaFold2 TM-score (uses alignment)", color=INK)
-    ax1.set_title("Per protein", color=INK, fontweight="semibold")
-    ax1.text(.04, .96, "above the line: AlphaFold2 better", transform=ax1.transAxes,
-             color=INK_MUTED, fontsize=9, va="top")
+    # The reading key goes in the title: placed inside the axes it sat on top of
+    # the viral points that matter most, the ones far above the diagonal.
+    ax1.set_title("Per protein: above the line, AlphaFold2 did better",
+                  color=INK, fontweight="semibold")
     ax1.legend(frameon=False, loc="lower right")
 
     data, pos, cols = [], [], []

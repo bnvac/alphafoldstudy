@@ -245,6 +245,21 @@ having built nothing.
 through an `AFS_RUN` environment variable rather than `--run`. Until this
 commit, any fresh clone on NixOS silently produced no environment.
 
+## October 2026
+
+**Oct 14** [school] Senior project proposal written and presented.
+
+**Oct 19** [code] **Ran the mechanism test.** The same 211 proteins (those
+under ESMFold's 400-residue API limit) through ESMFold, which uses no sequence
+alignment. The viral gap more than doubled, from 0.051 under AlphaFold2 to
+0.130 under ESMFold, and AlphaFold2's advantage was about five times larger on
+viral proteins than cellular (p = 0.0014). So alignments are not what makes
+AlphaFold2 worse on viral proteins; they partly rescue them. The disorder
+penalty was identical under both programs while the viral penalty doubled,
+which separates the two effects: disorder behaves like a property of the
+protein, viral origin like a limitation of sequence-trained models. This test
+was suggested by Dr. Paul on Aug 19.
+
 ---
 
 ## How the headline number moved

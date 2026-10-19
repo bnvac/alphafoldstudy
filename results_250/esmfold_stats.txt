@@ -1,0 +1,38 @@
+ESMFold against AlphaFold2: is the viral deficit an alignment effect?
+ESMFold v1 via the ESM Atlas API. All comparisons use only the proteins
+both programs scored, so each is judged on the same set.
+
+  viral     106 of 114 scored by ESMFold
+  cellular  105 of 119 scored by ESMFold
+    skipped, over 400 residues: 22
+
+1. The viral gap under each program (Mann-Whitney U, median TM-score)
+  AlphaFold2             viral 0.917  cellular 0.968  p = 1.58e-08  r = -0.450
+  ESMFold                viral 0.824  cellular 0.954  p = 1.47e-11  r = -0.538
+
+2. AlphaFold2 against ESMFold on the same proteins (Wilcoxon signed-rank)
+  viral     AF2 median 0.917, ESM median 0.824, median AF2 advantage +0.033, p = 4.66e-08
+  cellular  AF2 median 0.968, ESM median 0.954, median AF2 advantage +0.006, p = 7.32e-05
+
+3. THE KEY TEST: does AlphaFold2's advantage differ between groups?
+   Per protein, advantage = AF2 TM-score minus ESMFold TM-score.
+  median advantage: viral +0.033, cellular +0.006
+  Mann-Whitney on the advantage: p = 0.0014, r = +0.255
+  viral gap in median TM: AF2 0.051, ESMFold 0.130
+
+4. Regression, ESMFold TM-score ~ disorder + is_viral
+  n = 211
+  ESMFold    is_viral coef -0.2260, p = 1.78e-13;  disorder coef -0.2378, p = 0.00118
+  AlphaFold2 is_viral coef -0.0981, p = 2.64e-06;  disorder coef -0.2315, p = 1.02e-05
+  (same proteins and model for both, so the coefficients compare directly)
+
+5. Does ESMFold's own confidence track its error?
+  Spearman, ESMFold pLDDT vs TM-score: rho = +0.811, p = 1.84e-50 (n = 211)
+
+Reading
+  AlphaFold2 gains more over ESMFold on viral proteins than on cellular
+  ones. Alignments partly rescue AlphaFold2 on viral proteins, and the
+  language model is weaker on them still.
+  This is a test of the alignment explanation, not a proof of mechanism:
+  ESMFold's language model was itself trained on sequence databases in
+  which viral proteins are under-represented.
