@@ -1,0 +1,437 @@
+#!/usr/bin/env python3
+"""make_protein_lists.py
+
+Generate ready-to-use protein registries so a fresh clone can run immediately.
+
+This does the same job as build_registry.py but is built for scale. Instead of
+one REST round trip per candidate, it fetches entity details from the RCSB
+GraphQL endpoint in batches of 150, looks up UniProt records in batches of 100,
+and checks AlphaFold coverage in parallel. Building a thousand-protein registry
+drops from hours to a couple of minutes.
+
+Written registries (committed to the repo so nobody has to rebuild them):
+
+    proteins_250.csv     250 proteins, balanced 125 viral and 125 cellular
+    proteins_1000.csv    1000 proteins, 375 viral and 625 cellular; uneven
+                         because 375 is every viral protein that qualifies
+
+Selection rules, matching the study design:
+
+  - protein entities solved at 3.0 A resolution or better
+  - viral (taxonomy 10239) and human (taxonomy 9606)
+  - 50 to 600 residues in the crystallised entity
+  - one representative per UniProt accession
+  - one accession per entity, which drops engineered fusions and chimeras
+  - an AlphaFold model must exist AND must actually cover the crystallised
+    sequence, measured with the same function and threshold the analysis uses
+
+The last rule is what keeps mismatches out. Requiring only that a model exists
+admits the three failure modes that produced every artificially low score in
+earlier datasets: a polyprotein accession whose models are separate mature
+chains, an accession describing a different strain than the deposited
+construct, and a model covering another region entirely. Each of those has a
+model; none has a model of the protein that was crystallised. Checking coverage
+here, against af_study.COVERAGE_MIN, means a selected protein is guaranteed to
+pass the runtime check rather than being filtered out of the results later.
+
+Variants are deliberately kept. An Omicron spike RBD against the reference
+sequence model covers 0.88, comfortably above threshold, while a wrong-strain
+accession covers 0.20. Alignment identity separates those cleanly where a
+k-mer test does not, since scattered point mutations break most k-mers.
+
+Run with:  python src/make_protein_lists.py
+           python src/make_protein_lists.py --sizes 250 1000 --pool 12000
+"""
+
+import argparse
+import csv
+import io
+import os
+import sys
+from concurrent.futures import ThreadPoolExecutor
+
+import requests
+from rcsbapi.search import AttributeQuery
+
+# The coverage measurement and its threshold are imported rather than copied,
+# so the check applied when a dataset is built is identical to the one applied
+# when it is analysed. Importing af_study also runs its dependency bootstrap.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from af_study import COVERAGE_MIN, sequence_coverage  # noqa: E402
+
+CONFIG = {
+    "taxonomy": {"viral": "10239", "cellular": "9606"},
+    "polymer_type": "Protein",
+    "max_resolution": 3.0,
+    "min_length": 50,
+    "max_length": 600,
+    # Longer parent sequences are served by AlphaFold in fragments, so the
+    # downloaded model may not contain the crystallised region at all.
+    "af_max_single_fragment": 2700,
+    # UniProt protein names to exclude, matched case-insensitively. Empty by
+    # default, and deliberately so.
+    #
+    # Polyproteins were the obvious candidate: AlphaFold serves them as one
+    # model per mature chain, and the pipeline used to download whichever chain
+    # the API listed first, which for poliovirus was a 22-residue peptide. That
+    # looked like a reason to drop them. It was not. The real defect was the
+    # model choice, now fixed in af_study.select_af_entry, and once the correct
+    # mature chain is selected these proteins score normally: a set that had
+    # been scoring 0.03 to 0.08 came back at 0.96 to 0.99.
+    #
+    # Excluding them would therefore throw away viral proteins that can be
+    # measured perfectly well, and the viral pool is already the scarce side of
+    # this comparison. The coverage check in af_study.py remains the backstop
+    # for the few where chain selection cannot resolve a match.
+    "exclude_name_patterns": [],
+
+    "graphql_url": "https://data.rcsb.org/graphql",
+    "uniprot_search_url": "https://rest.uniprot.org/uniprotkb/search",
+    "af_api_url": "https://alphafold.ebi.ac.uk/api/prediction/{uniprot}",
+
+    "entity_batch": 150,     # entity ids per GraphQL request
+    "uniprot_batch": 100,    # accessions per UniProt request
+    "af_workers": 16,        # parallel AlphaFold checks
+    "timeout": 90,
+
+    # A candidate is kept only when some AlphaFold model actually covers the
+    # sequence that was crystallised. Set from af_study.COVERAGE_MIN so the two
+    # checks cannot drift apart: passing here means passing there.
+    "af_min_coverage": COVERAGE_MIN,
+}
+
+ENTITY_FIELDS = """
+  rcsb_id
+  rcsb_polymer_entity_container_identifiers { uniprot_ids auth_asym_ids }
+  entity_poly { rcsb_sample_sequence_length pdbx_seq_one_letter_code_can }
+  rcsb_polymer_entity { pdbx_description }
+  entry { rcsb_entry_info { resolution_combined } }
+"""
+
+FIELDNAMES = ["name", "type", "pdb_id", "pdb_chain", "uniprot", "resolution"]
+
+
+def search_entity_ids(taxonomy_id, limit):
+    """Return up to `limit` polymer-entity IDs for one taxonomic group."""
+    q_tax = AttributeQuery(
+        "rcsb_entity_source_organism.taxonomy_lineage.id", "exact_match", taxonomy_id)
+    q_type = AttributeQuery(
+        "entity_poly.rcsb_entity_polymer_type", "exact_match", CONFIG["polymer_type"])
+    q_res = AttributeQuery(
+        "rcsb_entry_info.resolution_combined", "less_or_equal", CONFIG["max_resolution"])
+
+    ids = []
+    for entity_id in (q_tax & q_type & q_res)(return_type="polymer_entity"):
+        ids.append(entity_id)
+        if len(ids) >= limit:
+            break
+    return ids
+
+
+def fetch_entities(entity_ids):
+    """Fetch entity details from GraphQL in batches. Returns a list of dicts."""
+    out = []
+    size = CONFIG["entity_batch"]
+    for start in range(0, len(entity_ids), size):
+        chunk = entity_ids[start:start + size]
+        id_list = ",".join('"{0}"'.format(i) for i in chunk)
+        query = "{ polymer_entities(entity_ids: [%s]) { %s } }" % (id_list, ENTITY_FIELDS)
+        try:
+            resp = requests.post(CONFIG["graphql_url"], json={"query": query},
+                                 timeout=CONFIG["timeout"])
+            entities = (resp.json().get("data") or {}).get("polymer_entities") or []
+        except Exception as exc:
+            print("  batch at {0} failed: {1}".format(start, exc))
+            continue
+        out.extend(e for e in entities if e)
+        sys.stdout.write("\r  fetched {0}/{1} entities".format(len(out), len(entity_ids)))
+        sys.stdout.flush()
+    print()
+    return out
+
+
+def parse_entity(entity, type_label):
+    """Turn one GraphQL entity into a candidate dict, or None if unusable."""
+    ident = entity.get("rcsb_polymer_entity_container_identifiers") or {}
+    uniprot_ids = ident.get("uniprot_ids") or []
+    chains = ident.get("auth_asym_ids") or []
+    if not uniprot_ids or not chains:
+        return None
+    # More than one accession on a single entity means an engineered fusion or
+    # chimera, such as a receptor spliced to cytochrome b5 to aid
+    # crystallisation. No single AlphaFold model corresponds to that construct,
+    # so the comparison would be meaningless whichever accession were chosen.
+    if len(uniprot_ids) > 1:
+        return None
+
+    poly = entity.get("entity_poly") or {}
+    length = poly.get("rcsb_sample_sequence_length")
+    if length is None or length < CONFIG["min_length"] or length > CONFIG["max_length"]:
+        return None
+
+    resolutions = (((entity.get("entry") or {}).get("rcsb_entry_info") or {})
+                   .get("resolution_combined") or [])
+    if not resolutions:
+        return None
+
+    sequence = (poly.get("pdbx_seq_one_letter_code_can") or "").strip().upper()
+    sequence = "".join(sequence.split())
+    if not sequence:
+        return None
+
+    rcsb_id = entity.get("rcsb_id") or ""
+    pdb_id = rcsb_id.split("_")[0].upper()
+    if not pdb_id:
+        return None
+
+    description = (entity.get("rcsb_polymer_entity") or {}).get("pdbx_description")
+    return {
+        "name": (description or "Unknown").replace("\n", " ").strip(),
+        "type": type_label,
+        "pdb_id": pdb_id,
+        "pdb_chain": chains[0],
+        "uniprot": uniprot_ids[0],
+        "resolution": "{0:.2f}".format(float(resolutions[0])),
+        # Carried only so the AlphaFold check can match against it; not written
+        # to the CSV, whose columns are fixed by FIELDNAMES.
+        "sequence": sequence,
+    }
+
+
+def uniprot_records(accessions):
+    """Map accession -> (sequence length, protein name), fetched in batches.
+
+    The name is what identifies a polyprotein; the length alone does not.
+    """
+    records = {}
+    accessions = list(accessions)
+    size = CONFIG["uniprot_batch"]
+    for start in range(0, len(accessions), size):
+        chunk = accessions[start:start + size]
+        query = " OR ".join("accession:{0}".format(a) for a in chunk)
+        try:
+            resp = requests.get(
+                CONFIG["uniprot_search_url"],
+                params={"query": query,
+                        "fields": "accession,length,protein_name",
+                        "format": "tsv", "size": 500},
+                timeout=CONFIG["timeout"])
+            # Parsed by header name: protein names contain commas and brackets,
+            # and the column order is not guaranteed.
+            reader = csv.DictReader(io.StringIO(resp.text), delimiter="\t")
+            for row in reader:
+                accession = row.get("Entry")
+                length = row.get("Length")
+                if accession and length and length.isdigit():
+                    records[accession] = (int(length), row.get("Protein names") or "")
+        except Exception as exc:
+            print("  uniprot batch at {0} failed: {1}".format(start, exc))
+        sys.stdout.write("\r  resolved {0}/{1} UniProt records".format(
+            len(records), len(accessions)))
+        sys.stdout.flush()
+    print()
+    return records
+
+
+def is_excluded_name(name):
+    """True when a UniProt protein name matches an exclusion pattern."""
+    lowered = (name or "").lower()
+    return any(pattern in lowered for pattern in CONFIG["exclude_name_patterns"])
+
+
+def af_best_coverage(candidate):
+    """Best sequence coverage of this candidate by any of its AlphaFold models.
+
+    Coverage is measured with af_study.sequence_coverage, which is the same
+    function the analysis applies at runtime, against the same COVERAGE_MIN
+    threshold. That is deliberate and is the whole point of this check: a
+    candidate accepted here is guaranteed to pass the runtime check, so
+    mismatches are kept out of the dataset instead of being filtered out of the
+    results afterwards.
+
+    Returns 0.0 when no model exists or the request fails, so a candidate is
+    dropped rather than admitted on a network error.
+
+    Asking only whether a model exists, as this did previously, admits three
+    kinds of mismatch: a polyprotein accession whose models are individual
+    mature chains, an accession describing a different strain than the
+    deposited construct, and an accession whose model covers another region.
+    All three have a model. None has a model of the protein crystallised.
+    """
+    try:
+        url = CONFIG["af_api_url"].format(uniprot=candidate["uniprot"])
+        resp = requests.get(url, timeout=30)
+        if resp.status_code != 200:
+            return 0.0
+        entries = resp.json() or []
+    except Exception:
+        return 0.0
+
+    crystal = candidate["sequence"]
+    best = 0.0
+    # Longest models first, so a full-length model settles it before the short
+    # mature-chain models are aligned at all.
+    entries = sorted(entries, key=lambda e: -len(e.get("uniprotSequence") or ""))
+    for entry in entries:
+        model_seq = entry.get("uniprotSequence") or ""
+        # A model shorter than the crystal cannot cover it, and alignment is the
+        # expensive step, so skip those without aligning.
+        if len(model_seq) < len(crystal) * CONFIG["af_min_coverage"]:
+            continue
+        coverage = sequence_coverage(crystal, model_seq)
+        if coverage is not None:
+            best = max(best, coverage)
+        if best >= 0.999:
+            break
+    return best
+
+
+def filter_alphafold(candidates):
+    """Keep candidates whose crystallised sequence is covered by a real model."""
+    with ThreadPoolExecutor(max_workers=CONFIG["af_workers"]) as pool:
+        coverages = list(pool.map(af_best_coverage, candidates))
+
+    threshold = CONFIG["af_min_coverage"]
+    kept = [c for c, cov in zip(candidates, coverages) if cov >= threshold]
+    none_at_all = sum(1 for cov in coverages if cov == 0.0)
+    partial = len(candidates) - len(kept) - none_at_all
+    print("  {0} of {1} have an AlphaFold model covering the crystallised "
+          "sequence".format(len(kept), len(candidates)))
+    print("    {0} with no usable model, {1} whose model does not cover it "
+          "(coverage below {2})".format(none_at_all, partial, threshold))
+    return kept
+
+
+def gather(type_label, taxonomy_id, pool_size):
+    """Build the full candidate list for one group."""
+    print("\n=== {0} (taxonomy {1}) ===".format(type_label, taxonomy_id))
+
+    print("  searching RCSB for up to {0} entities".format(pool_size))
+    entity_ids = search_entity_ids(taxonomy_id, pool_size)
+    print("  search returned {0}".format(len(entity_ids)))
+
+    entities = fetch_entities(entity_ids)
+
+    # Parse, then keep one representative per accession so that heavily
+    # deposited proteins cannot dominate the sample.
+    seen = set()
+    candidates = []
+    for entity in entities:
+        parsed = parse_entity(entity, type_label)
+        if parsed is None or parsed["uniprot"] in seen:
+            continue
+        seen.add(parsed["uniprot"])
+        candidates.append(parsed)
+    print("  {0} distinct accessions inside the length window".format(len(candidates)))
+
+    records = uniprot_records(c["uniprot"] for c in candidates)
+    limit = CONFIG["af_max_single_fragment"]
+
+    # An accession whose record could not be resolved is kept; the coverage
+    # check in af_study.py is the backstop for anything that slips through.
+    before = len(candidates)
+    candidates = [c for c in candidates
+                  if records.get(c["uniprot"], (0, ""))[0] <= limit]
+    print("  {0} excluded as AlphaFold fragments (parent over {1} aa)".format(
+        before - len(candidates), limit))
+
+    before = len(candidates)
+    candidates = [c for c in candidates
+                  if not is_excluded_name(records.get(c["uniprot"], (0, ""))[1])]
+    print("  {0} excluded as polyproteins (by UniProt annotation)".format(
+        before - len(candidates)))
+
+    return filter_alphafold(candidates)
+
+
+def write_csv(path, rows):
+    with open(path, "w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FIELDNAMES)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: row[k] for k in FIELDNAMES})
+    counts = {}
+    for row in rows:
+        counts[row["type"]] = counts.get(row["type"], 0) + 1
+    print("  {0}: {1} proteins ({2})".format(
+        path, len(rows),
+        ", ".join("{0}={1}".format(k, v) for k, v in sorted(counts.items()))))
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate ready-made protein registries.")
+    parser.add_argument("--sizes", type=int, nargs="+", default=[250, 1000],
+                        help="registry sizes to write (default: 250 1000)")
+    parser.add_argument("--pool", type=int, default=12000,
+                        help="max search hits to examine per group (default: 12000)")
+    args = parser.parse_args()
+
+    pools = {}
+    for type_label, taxonomy_id in CONFIG["taxonomy"].items():
+        pools[type_label] = gather(type_label, taxonomy_id, args.pool)
+
+    print("\n=== available ===")
+    for type_label, rows in pools.items():
+        print("  {0}: {1}".format(type_label, len(rows)))
+
+    # An accession can legitimately turn up in both searches, for example a
+    # human protein solved as part of a viral complex, since the taxonomy
+    # filter matches any source organism on the entry. Deduplicating only
+    # within each group would then let the same protein appear twice in the
+    # combined file, which breaks the one-representative-per-accession rule the
+    # whole design rests on. Resolve the overlap once, in favour of the group
+    # that has fewer candidates to spare.
+    viral_accessions = {c["uniprot"] for c in pools["viral"]}
+    overlap = [c for c in pools["cellular"] if c["uniprot"] in viral_accessions]
+    if overlap:
+        pools["cellular"] = [c for c in pools["cellular"]
+                             if c["uniprot"] not in viral_accessions]
+        print("\n  {0} accession(s) present in both groups, kept as viral".format(
+            len(overlap)))
+
+    print("\n=== writing registries ===")
+    for size in sorted(args.sizes):
+        half = size // 2
+        # Take an even split where possible. If one group is short, top up from
+        # the other so the file still holds the requested number of proteins,
+        # and say so, since the balance matters for the comparison.
+        viral = pools["viral"][:half]
+        cellular = pools["cellular"][:half]
+        shortfall = size - len(viral) - len(cellular)
+        if shortfall > 0:
+            extra_cell = pools["cellular"][len(cellular):len(cellular) + shortfall]
+            cellular = cellular + extra_cell
+            shortfall -= len(extra_cell)
+        if shortfall > 0:
+            extra_viral = pools["viral"][len(viral):len(viral) + shortfall]
+            viral = viral + extra_viral
+
+        rows = viral + cellular
+        accessions = {r["uniprot"] for r in rows}
+        if len(accessions) != len(rows):
+            print("  WARNING: {0} duplicate accession(s) in {1}".format(
+                len(rows) - len(accessions), size))
+        if len(rows) < size:
+            print("  note: only {0} of {1} available".format(len(rows), size))
+        if len(viral) != len(cellular):
+            print("  note: groups are uneven ({0} viral, {1} cellular);"
+                  " the limiting group is capped by what the PDB contains".format(
+                      len(viral), len(cellular)))
+        write_csv("proteins_{0}.csv".format(size), rows)
+
+        # proteins.csv is what af_study.py reads when no --registry is given, so
+        # it is refreshed from the smallest list here. Leaving it to be synced by
+        # hand is how it went stale before: a rebuild produced new
+        # proteins_250.csv while the default kept serving the previous
+        # selection, so a fresh clone silently ran the old dataset.
+        if size == min(args.sizes):
+            write_csv("proteins.csv", rows)
+            print("  proteins.csv: refreshed from the {0}-protein list "
+                  "(this is the default registry)".format(size))
+
+    print("\nDone. Point the study at one of them:")
+    print("  python src/af_study.py --registry proteins_250.csv")
+
+
+if __name__ == "__main__":
+    main()

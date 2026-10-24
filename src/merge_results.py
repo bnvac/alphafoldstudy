@@ -57,6 +57,17 @@ def main():
     merge("metrics.csv", "combined_metrics.csv")
     merge("per_residue.csv", "combined_per_residue.csv")
 
+    # This script runs no analysis, and the per-batch stats files describe only
+    # their own batch, so the combined statistics have to be asked for.
+    combined = os.path.join(RESULTS, "combined_metrics.csv")
+    if os.path.exists(combined):
+        print("")
+        print("No statistics were computed. To analyse the merged table:")
+        print("  python src/compare_metrics.py --metrics {0} \\".format(combined))
+        print("      --out-dir {0}".format(os.path.join(RESULTS, "combined")))
+        print("  python src/extra_stats.py --metrics {0} \\".format(combined))
+        print("      --stats {0}".format(os.path.join(RESULTS, "combined_stats.txt")))
+
 
 if __name__ == "__main__":
     main()

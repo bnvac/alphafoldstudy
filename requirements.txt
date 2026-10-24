@@ -1,0 +1,28 @@
+# Python dependencies for the venv-based install (NixOS and any other machine
+# where conda is not wanted). The conda route uses environment.yml instead.
+#
+# PyTorch is deliberately absent. metapredict needs it, but the PyPI default is
+# the CUDA build, which is several gigabytes and useless here since nothing in
+# this project touches a GPU. setup_nixos.sh installs the CPU build from
+# PyTorch's own index first, which satisfies metapredict's requirement so pip
+# never reaches for the CUDA one.
+#
+# Floors, not pins, so resolution does not fail on a newer Python. Known good:
+#   numpy 2.4.6  scipy 1.17.1  pandas 3.0.5      matplotlib 3.11.1
+#   statsmodels 0.14.6  biopython 1.88  requests 2.33.1
+#   tmtools 0.3.0  rcsb-api 1.7.3  metapredict 3.0.2  torch 2.13.0
+
+numpy>=1.24
+scipy>=1.10
+pandas>=2.0
+matplotlib>=3.7
+statsmodels>=0.14
+biopython>=1.81
+requests>=2.28
+
+# TM-align bindings, used for structure superposition
+tmtools>=0.3.0
+# RCSB structured search client, used to build the protein registry
+rcsb-api>=1.0
+# Disorder prediction
+metapredict>=2.6

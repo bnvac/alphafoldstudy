@@ -1,0 +1,25 @@
+Viral vs cellular: TM-score, pLDDT and predicted disorder
+Coverage-filtered set (fragment mismatches excluded).
+Mann-Whitney U, two-sided. Rank-biserial r is the effect size;
+positive r means the viral group ranks higher.
+
+Proteins compared: 114 viral, 119 cellular
+
+TM-score
+  median viral    = 0.9272  (n=114)
+  median cellular = 0.9695  (n=119)
+  U = 3858.0, p = 1.3e-08 -> significant at alpha 0.05
+  rank-biserial r = -0.431
+
+mean pLDDT
+  median viral    = 78.8987  (n=114)
+  median cellular = 87.8814  (n=119)
+  U = 4488.0, p = 8.153e-06 -> significant at alpha 0.05
+  rank-biserial r = -0.338
+
+predicted disorder
+  median viral    = 10.6883  (n=114)
+  median cellular = 12.4424  (n=119)
+  U = 6033.0, p = 0.1423 -> not significant at alpha 0.05
+  rank-biserial r = -0.111
+

@@ -12,6 +12,9 @@ column in the registry CSV if one is present, otherwise it is read from the
 already-downloaded structure file in data/ (so this works offline, with no
 re-download). If neither source has it, the row is treated as missing.
 
+Surviving rows are then dealt across the batches so that every batch holds a
+proportional mix of viral and cellular proteins. See stratify() for why.
+
 Run with:  python make_batches.py [--input proteins.csv] [--batch-size 250]
 """
 
@@ -93,6 +96,45 @@ def get_resolution(row, data_dir, res_columns):
     return None
 
 
+def stratify(rows, n_batches):
+    """Deal rows into n_batches lists, each holding a proportional type mix.
+
+    The registries are written grouped by type (every viral row, then every
+    cellular row), so slicing them in file order hands whole batches a single
+    group. A single-group batch cannot run the viral vs cellular comparison at
+    all: Mann-Whitney has nothing to compare, and the regression's is_viral term
+    has zero variance, which yields a degenerate fit reported as a confident
+    "not significant". Dealing round-robin keeps both groups in every batch.
+
+    The cursor deliberately carries over between groups so the second group
+    starts where the first left off, which keeps the batch sizes even. Groups
+    are taken in order of first appearance rather than sorted, so a registry
+    that produces a single batch comes back byte-identical.
+    """
+    groups = []
+    for row in rows:
+        group = row.get("type") or ""
+        if group not in groups:
+            groups.append(group)
+
+    batches = [[] for _ in range(n_batches)]
+    cursor = 0
+    for group in groups:
+        for row in [r for r in rows if (r.get("type") or "") == group]:
+            batches[cursor % n_batches].append(row)
+            cursor += 1
+    return batches
+
+
+def composition(chunk):
+    """Readable 'viral=N, cellular=N' summary of one batch."""
+    counts = {}
+    for row in chunk:
+        key = (row.get("type") or "unknown")
+        counts[key] = counts.get(key, 0) + 1
+    return ", ".join("{0}={1}".format(k, counts[k]) for k in sorted(counts))
+
+
 def slurm_script(job_name, batch_csv, results_dir, log_dir, cfg):
     """Return the text of a SLURM job script for one batch."""
     return """#!/bin/bash
@@ -171,9 +213,9 @@ def main():
     n_batches = math.ceil(len(kept) / args.batch_size)
     pad = max(2, len(str(n_batches)))
     fields = REGISTRY_FIELDS + ["resolution"]
+    chunks = stratify(kept, n_batches)
 
-    for index in range(n_batches):
-        chunk = kept[index * args.batch_size:(index + 1) * args.batch_size]
+    for index, chunk in enumerate(chunks):
         tag = "batch_{0}".format(str(index + 1).zfill(pad))
         csv_path = os.path.join(args.out_dir, tag + ".csv")
         sh_path = os.path.join(args.out_dir, tag + ".sh")
@@ -190,7 +232,8 @@ def main():
             handle.write(slurm_script(
                 job_name, csv_path, results_dir, CONFIG["log_dir"], CONFIG["slurm"]))
 
-        print("  wrote {0} ({1} proteins) and {2}".format(csv_path, len(chunk), sh_path))
+        print("  wrote {0} ({1} proteins: {2}) and {3}".format(
+            csv_path, len(chunk), composition(chunk), sh_path))
 
     print("Generated {0} batch(es) of up to {1} proteins in {2}/.".format(
         n_batches, args.batch_size, args.out_dir))
