@@ -91,10 +91,10 @@ If you would rather have it always on, add that first line to your `~/.bashrc`.
 ### The two commands
 
     bash setup_nixos.sh
-    bash run_nixos.sh
+    bash run_nixos.sh src/run_all.py
 
 That is all. The first command takes ten to twenty minutes, most of it building
-the sandbox and downloading PyTorch. The second runs the study.
+the sandbox and downloading PyTorch. The second runs the whole experiment.
 
 ### Why NixOS needs its own path
 
@@ -164,11 +164,39 @@ on this page applies unchanged.
 
 Run everything from the project folder, not from inside `src/`.
 
-    python src/af_study.py
+### The whole experiment, one command
 
-This downloads each protein structure into `data/`, compares every AlphaFold
-prediction against its experimental structure, runs the statistics, and writes
-everything into `results/`.
+    python src/run_all.py
+
+On NixOS:
+
+    bash run_nixos.sh src/run_all.py
+
+This runs all four stages in order and stops at the first one that fails,
+saying which:
+
+1. **AlphaFold2 analysis** (`af_study.py`): downloads every structure into
+   `data/`, scores each AlphaFold2 prediction against its experimental
+   structure, and runs the statistics
+2. **Comparison figure** (`compare_metrics.py`)
+3. **Robustness tests** (`extra_stats.py`)
+4. **ESMFold mechanism test** (`esmfold_compare.py`): folds the same proteins
+   with ESMFold, which uses no sequence alignment, to test why viral proteins
+   are predicted worse. Needs internet; transient API failures are retried
+   automatically.
+
+Expect about an hour the first time for the 250 proteins, almost all of it
+downloading. Every stage reuses what is already downloaded or folded, so if
+anything interrupts it, run the same command again and it picks up where it
+stopped.
+
+Variations:
+
+    python src/run_all.py --registry proteins_1000.csv   the 1000-protein set
+    python src/run_all.py --skip-esmfold                 AlphaFold2 only
+
+Each stage can still be run on its own; `python src/af_study.py` alone is the
+AlphaFold2 analysis.
 
 It is safe to stop it and start it again. Structures already downloaded are
 reused rather than fetched twice, so restarting picks up roughly where it left
@@ -402,7 +430,9 @@ first with `nix-shell nix/fhs.nix`.
     src/                    all the code
       build_registry.py     picks proteins from RCSB, one at a time
       make_protein_lists.py picks proteins in bulk, much faster
+      run_all.py            runs the whole experiment in order
       af_study.py           the main study
+      esmfold_compare.py    the ESMFold mechanism test
       compare_metrics.py    box chart and group comparison
       extra_stats.py        additional statistical tests
       make_captions.py      figure captions

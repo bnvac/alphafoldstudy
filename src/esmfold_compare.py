@@ -64,6 +64,9 @@ CONFIG = {
     "request_sleep": 0.5,
     "retries": 3,
     "timeout": 120,
+    # Whole extra passes over proteins whose fold failed, after the main loop.
+    "retry_passes": 2,
+    "retry_pass_wait": 30,
 }
 
 COLORS = {"viral": "#d1495b", "cellular": "#2077C9"}
@@ -175,8 +178,36 @@ def score(pdb_id, chain, model_path):
     return float(result.tm_norm_chain1), float(result.rmsd), mean_plddt
 
 
+def _fold_and_score(rec, seq):
+    """Fold one protein and fill in its ESMFold fields in place."""
+    path = esm_model_path(rec["pdb_id"], rec["pdb_chain"])
+    if fold(seq, path) == "fail":
+        rec["esm_status"] = "fold failed"
+        return
+    try:
+        tm, rmsd, plddt = score(rec["pdb_id"], rec["pdb_chain"], path)
+        rec.update(esm_tm=tm, esm_rmsd=rmsd, esm_plddt=plddt, esm_status="ok")
+    except Exception as exc:
+        rec["esm_status"] = "scoring failed: {0}".format(exc)
+
+
+def _report(rec):
+    if rec["esm_status"] == "ok":
+        print("  {0:<32} AF2={1:.3f}  ESM={2:.3f}".format(
+            rec["name"][:32], rec["af_tm"], rec["esm_tm"]))
+    else:
+        print("  {0:<32} skipped: {1}".format(rec["name"][:32], rec["esm_status"]))
+
+
 def run(rows, sequences):
-    """Fold and score every usable protein, returning one dict per protein."""
+    """Fold and score every usable protein, returning one dict per protein.
+
+    Proteins whose fold failed get further passes at the end. The public API
+    drops connections now and then, and every failure seen in practice was
+    transient: a protein that failed once folded on the next attempt. Without
+    these passes a run finished with a few proteins missing and had to be
+    re-run by hand, which is exactly the kind of step that gets forgotten.
+    """
     out = []
     print("\n=== Folding with ESMFold ({0} proteins) ===".format(len(rows)))
     for r in rows:
@@ -185,28 +216,31 @@ def run(rows, sequences):
                "pdb_chain": r["pdb_chain"], "uniprot": r["uniprot"],
                "construct_len": len(seq), "disorder_frac": r.get("disorder_frac"),
                "af_tm": float(r["tm_score"]), "af_plddt": r.get("mean_plddt"),
-               "esm_tm": None, "esm_plddt": None, "esm_rmsd": None, "esm_status": "ok"}
+               "esm_tm": None, "esm_plddt": None, "esm_rmsd": None, "esm_status": "ok",
+               "_seq": seq}
         if not seq:
             rec["esm_status"] = "no construct sequence"
         elif len(seq) > CONFIG["esm_max_length"]:
             rec["esm_status"] = "over {0} residues".format(CONFIG["esm_max_length"])
         else:
-            path = esm_model_path(r["pdb_id"], r["pdb_chain"])
-            state = fold(seq, path)
-            if state == "fail":
-                rec["esm_status"] = "fold failed"
-            else:
-                try:
-                    tm, rmsd, plddt = score(r["pdb_id"], r["pdb_chain"], path)
-                    rec.update(esm_tm=tm, esm_rmsd=rmsd, esm_plddt=plddt)
-                except Exception as exc:
-                    rec["esm_status"] = "scoring failed: {0}".format(exc)
-        if rec["esm_status"] == "ok":
-            print("  {0:<32} AF2={1:.3f}  ESM={2:.3f}".format(
-                r["name"][:32], rec["af_tm"], rec["esm_tm"]))
-        else:
-            print("  {0:<32} skipped: {1}".format(r["name"][:32], rec["esm_status"]))
+            _fold_and_score(rec, seq)
+        _report(rec)
         out.append(rec)
+
+    for attempt in range(1, CONFIG["retry_passes"] + 1):
+        failed = [rec for rec in out if rec["esm_status"] == "fold failed"]
+        if not failed:
+            break
+        wait = CONFIG["retry_pass_wait"] * attempt
+        print("\n  {0} fold(s) failed; retry pass {1} of {2} in {3}s".format(
+            len(failed), attempt, CONFIG["retry_passes"], wait))
+        time.sleep(wait)
+        for rec in failed:
+            _fold_and_score(rec, rec["_seq"])
+            _report(rec)
+
+    for rec in out:
+        rec.pop("_seq", None)
     return out
 
 
