@@ -224,11 +224,19 @@ Five figures are generated. Each one answers a specific question.
 | `compare_metrics.png` | All three measures side by side, with a significance test on each |
 | `per_residue_disorder_hexbin.png` | Zoomed in to single amino acids: does local disorder predict local error? |
 
-`plddt_vs_tm.png` is the one to point at when explaining the coverage filter.
-Proteins flagged as sequence mismatches are drawn as x markers, and they sit in
-a telling place: high confidence but low accuracy. AlphaFold was sure and
-correct about a region that was never the one being compared. A genuine
-prediction failure looks the opposite, low confidence and low accuracy.
+`plddt_vs_tm.png` is the one to point at when explaining the filtering.
+Excluded proteins are drawn as x markers: either a sequence mismatch, where the
+model does not contain the crystallised protein, or a crystal too poorly
+resolved to trust.
+
+The figure is useful because the two kinds of low score look different. A
+mismatch shows high confidence with low accuracy: AlphaFold was sure, and
+correct, about a region that was never the one being compared. A genuine
+prediction failure shows low confidence with low accuracy. In the early
+dataset the low-scoring x markers sat in the first pattern, which is how the
+mismatch problem was found. After the selection fixes they sit in the second:
+the two remaining low-scoring mismatches are VP4 capsid subunits at pLDDT near
+58, which AlphaFold correctly flagged as uncertain.
 
 Planned but not yet built:
 

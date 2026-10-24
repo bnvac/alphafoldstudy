@@ -74,7 +74,7 @@ Kruskal-Wallis: TM-score across disorder bins
   bin 75-100  n=5
   H = 14.056, p = 0.002829 across 4 bins
 
-dropped 13 (7 viral, 6 cellular) as fragment mismatches
+dropped 13 (7 viral, 6 cellular): 4 as sequence mismatches, 11 as poorly resolved, some for both
 
 ============================================================
 EXTRA STATISTICAL TESTS (appended by extra_stats.py)

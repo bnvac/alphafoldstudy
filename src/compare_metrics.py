@@ -237,7 +237,7 @@ def write_report(stats, rows, out_txt, scope):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[2])
     parser.add_argument("--all", action="store_true",
-                        help="include fragment-flagged proteins (default excludes them)")
+                        help="include excluded proteins too: sequence mismatches and poorly resolved crystals (default leaves them out)")
     parser.add_argument("--metrics", default=os.path.join(RESULTS, "metrics.csv"),
                         help="metrics CSV to read (default results/metrics.csv)")
     parser.add_argument("--out-dir", default=None,

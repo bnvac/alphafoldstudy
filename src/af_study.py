@@ -1069,10 +1069,16 @@ def stage3_stats(rows):
     emit("=" * 60)
     _stats_block(kept, emit)
 
+    # Two separate reasons put a protein in this set, and one protein can have
+    # both, so the line names each count rather than calling them all fragment
+    # mismatches. It used to, and reported 13 "mismatches" where there were 4.
     dropped_viral = sum(1 for r in dropped if r["type"] == "viral")
     dropped_cellular = sum(1 for r in dropped if r["type"] == "cellular")
-    emit("dropped {0} ({1} viral, {2} cellular) as fragment mismatches".format(
-        len(dropped), dropped_viral, dropped_cellular))
+    n_fragment = sum(1 for r in dropped if r["fragment_flag"])
+    n_missing = sum(1 for r in dropped if r["missing_flag"])
+    emit("dropped {0} ({1} viral, {2} cellular): {3} as sequence mismatches, "
+         "{4} as poorly resolved, some for both".format(
+             len(dropped), dropped_viral, dropped_cellular, n_fragment, n_missing))
 
     out = os.path.join(CONFIG["results_dir"], "stats.txt")
     with open(out, "w") as handle:
@@ -1087,7 +1093,7 @@ def stage4_figures(rows):
     """Render three PNG figures from the coverage-filtered set.
 
     The boxplot uses only kept proteins. The scatter plots also show the
-    fragment-flagged proteins, drawn with an 'x' marker so the outliers stay
+    excluded proteins (sequence mismatch or poorly resolved), drawn with an 'x' marker so the outliers stay
     visible but are clearly distinguishable from the kept set.
     """
     print("\n=== Stage 4: figures ===")
@@ -1128,7 +1134,7 @@ def stage4_figures(rows):
         ]
         if flagged:
             handles.append(Line2D([], [], marker="x", linestyle="none", color="gray",
-                                  label="fragment-flagged"))
+                                  label="excluded"))
         ax.legend(handles=handles)
 
     # Figure 1: TM-score boxplot with jittered points (kept set only).

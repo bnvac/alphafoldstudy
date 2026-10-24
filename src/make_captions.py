@@ -82,7 +82,7 @@ def main():
 
     captions.append((
         "plddt_vs_tm.png",
-        "Per-protein mean pLDDT vs TM-score, colored by type with fragment-flagged "
+        "Per-protein mean pLDDT vs TM-score, colored by type with excluded "
         "proteins drawn as x markers (coverage-filtered set; the correlation is "
         "over the kept proteins). Higher AlphaFold confidence tracks higher "
         "accuracy: Spearman rho = {0}, p = {1} (n={2}).".format(
@@ -91,7 +91,7 @@ def main():
     captions.append((
         "disorder_vs_tm.png",
         "Predicted disorder (percent) vs TM-score, colored by type with "
-        "fragment-flagged proteins drawn as x markers (coverage-filtered set). "
+        "excluded proteins (sequence mismatch or poorly resolved) drawn as x markers. "
         "More disorder goes with lower accuracy: Spearman rho = {0}, p = {1} "
         "(n={2}).".format(dis_rho, dis_p, dis_n)))
 
