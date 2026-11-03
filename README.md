@@ -5,6 +5,15 @@ This project answers that by taking proteins whose real structure has been solve
 experimentally, downloading AlphaFold's prediction for each one, measuring how
 closely they match, and comparing the two groups.
 
+**Result:** yes. Across 233 solved structures, the median TM-score is
+**0.927 for viral proteins against 0.970 for human ones** (p = 1.3 × 10⁻⁸).
+Without alignments, under ESMFold, the gap more than doubles, and disorder
+turns out to be a separate penalty from viral origin. Details in
+[Results so far](#results-so-far).
+
+Mentored by Dr. Blair G. Paul at the Marine Biological Laboratory. The paper is
+being written up; this repository has the code, data and figures behind it.
+
 ---
 
 ## Installing it
@@ -22,7 +31,7 @@ need administrator or sudo access. The installer handles all of it.
 
 Open a terminal and run these:
 
-    git clone https://github.com/2008wbbv/alphafoldstudy.git
+    git clone https://github.com/bnvac/alphafoldstudy.git
     cd alphafoldstudy
     bash setup_env.sh
 
